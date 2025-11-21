@@ -57,7 +57,11 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Allows cross-domain cookie sen
 
 # This enables credentials (like cookies) to be sent from your frontend domain.
 # Replace 'https://asoraledecnal.github.io' with your actual frontend URL if it's different.
-CORS(app, supports_credentials=True, origins=['https://asoraledecnal.github.io', 'http://127.0.0.1:5000'])
+CORS(
+    app,
+    resources={r"/api/*": {"origins": ["https://asoraledecnal.github.io", "http://127.0.0.1:5000"]}},
+    supports_credentials=True
+)
 
 # --- Database Configuration ---
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
