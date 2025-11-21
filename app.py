@@ -300,3 +300,4 @@ if __name__ == '__main__':
     # so the secure cookie won't work. We use this for local testing only.
     app.config['SESSION_COOKIE_SECURE'] = False
     app.run(debug=True)
+
