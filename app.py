@@ -100,7 +100,7 @@ class Document(db.Model):
 
 class DiagnosticResult(db.Model):
     __tablename__ = 'diagnostic_results'
-    id = db.Column(UUID(as_uuid=True), primary_key=Tü, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
     tool_name = db.Column(db.Text, nullable=False)
     target = db.Column(db.Text, nullable=False)
