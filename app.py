@@ -8,6 +8,8 @@ from flask import Flask, request, jsonify, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 from pythonping import ping # Import pythonping
 
 # --- Helper function for input validation ---
@@ -49,19 +51,64 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Allows cross-domain cookie sen
 CORS(app, supports_credentials=True, origins=['https://asoraledecnal.github.io', 'http://127.0.0.1:5000'])
 
 # --- Database Configuration ---
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
-# --- Database Model ---
+# --- Database Models ---
 class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
+    __tablename__ = 'users'
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email = db.Column(db.Text, unique=True, nullable=False)
+    password_hash = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.TIMESTAMP(timezone=True), server_default=db.func.now())
+    updated_at = db.Column(db.TIMESTAMP(timezone=True), server_default=db.func.now(), onupdate=db.func.now())
+    diagnostic_results = db.relationship('DiagnosticResult', backref='user', lazy=True)
 
     def __repr__(self):
         return f'<User {self.email}>'
+
+class Document(db.Model):
+    __tablename__ = 'documents'
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    file_path = db.Column(db.Text, unique=True, nullable=False)
+    title = db.Column(db.Text)
+    description = db.Column(db.Text)
+    created_at = db.Column(db.TIMESTAMP(timezone=True), server_default=db.func.now())
+    updated_at = db.Column(db.TIMESTAMP(timezone=True), server_default=db.func.now(), onupdate=db.func.now())
+
+    def __repr__(self):
+        return f'<Document {self.file_path}>'
+
+class DiagnosticResult(db.Model):
+    __tablename__ = 'diagnostic_results'
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
+    tool_name = db.Column(db.Text, nullable=False)
+    target = db.Column(db.Text, nullable=False)
+    summary = db.Column(db.Text)
+    raw_log = db.Column(db.Text)
+    executed_at = db.Column(db.TIMESTAMP(timezone=True), server_default=db.func.now())
+
+    def __repr__(self):
+        return f'<DiagnosticResult {self.tool_name} on {self.target}>'
+
+class Incident(db.Model):
+    __tablename__ = 'incidents'
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    title = db.Column(db.Text, nullable=False)
+    narrative = db.Column(db.Text)
+    status = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.TIMESTAMP(timezone=True), server_default=db.func.now())
+    updated_at = db.Column(db.TIMESTAMP(timezone=True), server_default=db.func.now(), onupdate=db.func.now())
+
+    def __repr__(self):
+        return f'<Incident {self.title}>'
 
 # --- API Endpoints ---
 @app.route('/api/signup', methods=['POST'])
@@ -74,7 +121,7 @@ def signup():
         return jsonify({"message": "User with this email already exists!"}), 409
 
     hashed_password = generate_password_hash(data['password'], method='pbkdf2:sha256')
-    new_user = User(email=data['email'], password=hashed_password)
+    new_user = User(email=data['email'], password_hash=hashed_password)
     db.session.add(new_user)
     db.session.commit()
 
@@ -89,10 +136,10 @@ def login():
 
     user = User.query.filter_by(email=data['email']).first()
 
-    if not user or not check_password_hash(user.password, data['password']):
+    if not user or not check_password_hash(user.password_hash, data['password']):
         return jsonify({"message": "Invalid email or password"}), 401
     
-    session['user_id'] = user.id
+    session['user_id'] = str(user.id) # Store UUID as string in session
     return jsonify({"message": "Login successful!", "user_id": user.id}), 200
 
 
@@ -104,11 +151,16 @@ def logout():
 
 @app.route('/api/check_session', methods=['GET'])
 def check_session():
-    user_id = session.get('user_id')
-    if user_id:
-        user = db.session.get(User, user_id)
-        if user:
-            return jsonify({"logged_in": True, "email": user.email}), 200
+    user_id_str = session.get('user_id')
+    if user_id_str:
+        try:
+            user_id = uuid.UUID(user_id_str) # Convert string back to UUID
+            user = db.session.get(User, user_id)
+            if user:
+                return jsonify({"logged_in": True, "email": user.email}), 200
+        except ValueError:
+            # Handle cases where session user_id is not a valid UUID
+            pass
     
     return jsonify({"logged_in": False}), 401
 
