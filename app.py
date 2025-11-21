@@ -5,7 +5,7 @@ import socket
 import re
 import ipaddress
 from flask import Flask, request, jsonify, session
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 import uuid
@@ -42,6 +42,7 @@ def is_valid_host(host):
 
 # --- App Initialization and Configuration ---
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 bcrypt = Bcrypt(app)
 limiter = Limiter(
     get_remote_address,
