@@ -4,3 +4,4 @@ Flask-SQLAlchemy
 Werkzeug
 gunicorn
 pythonping
+psycopg2-binary
