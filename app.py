@@ -10,6 +10,9 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 import uuid
 from sqlalchemy.dialects.postgresql import UUID
+from flask_bcrypt import Bcrypt
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from pythonping import ping # Import pythonping
 
 # --- Helper function for input validation ---
@@ -39,6 +42,12 @@ def is_valid_host(host):
 
 # --- App Initialization and Configuration ---
 app = Flask(__name__)
+bcrypt = Bcrypt(app)
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"]
+)
 
 # This is the crucial configuration for secure, cross-domain sessions.
 # In a real production app, the secret key should come from an environment variable.
@@ -87,7 +96,7 @@ class Document(db.Model):
 
 class DiagnosticResult(db.Model):
     __tablename__ = 'diagnostic_results'
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(UUID(as_uuid=True), primary_key=Tü, default=uuid.uuid4)
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
     tool_name = db.Column(db.Text, nullable=False)
     target = db.Column(db.Text, nullable=False)
@@ -112,6 +121,7 @@ class Incident(db.Model):
 
 # --- API Endpoints ---
 @app.route('/api/signup', methods=['POST'])
+@limiter.limit("5 per minute")
 def signup():
     data = request.get_json()
     if not data or not data.get('email') or not data.get('password'):
@@ -120,7 +130,7 @@ def signup():
     if User.query.filter_by(email=data['email']).first():
         return jsonify({"message": "User with this email already exists!"}), 409
 
-    hashed_password = generate_password_hash(data['password'], method='pbkdf2:sha256')
+    hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
     new_user = User(email=data['email'], password_hash=hashed_password)
     db.session.add(new_user)
     db.session.commit()
@@ -129,6 +139,7 @@ def signup():
 
 
 @app.route('/api/login', methods=['POST'])
+@limiter.limit("10 per minute")
 def login():
     data = request.get_json()
     if not data or not data.get('email') or not data.get('password'):
@@ -136,7 +147,7 @@ def login():
 
     user = User.query.filter_by(email=data['email']).first()
 
-    if not user or not check_password_hash(user.password_hash, data['password']):
+    if not user or not bcrypt.check_password_hash(user.password_hash, data['password']):
         return jsonify({"message": "Invalid email or password"}), 401
     
     session['user_id'] = str(user.id) # Store UUID as string in session

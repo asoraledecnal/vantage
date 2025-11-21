@@ -5,3 +5,5 @@ Werkzeug
 gunicorn
 pythonping
 psycopg2-binary
+Flask-Bcrypt
+Flask-Limiter
