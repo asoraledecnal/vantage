@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Configuration ---
-  const BACKEND_URL = "https://project-vantage-backend-ih0i.onrender.com"
+  const BACKEND_URL = "https://vantage-backend-api.onrender.com"
 
   const loginForm = document.getElementById("login-form")
   const messageDiv = document.getElementById("message")
