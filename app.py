@@ -51,7 +51,7 @@ limiter = Limiter(
 
 # This is the crucial configuration for secure, cross-domain sessions.
 # In a real production app, the secret key should come from an environment variable.
-app.secret_key = os.environ.get('SECRET_KEY', 'a_very_strong_and_long_random_secret_key_for_production')
+app.secret_key = os.environ.get('SECRET_KEY', 'vantage.project2025')
 app.config['SESSION_COOKIE_SECURE'] = True  # Ensures cookies are only sent over HTTPS
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Allows cross-domain cookie sending
 
