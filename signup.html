@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Vantage</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="auth.css">
+</head>
+<body class="auth-body">
+    <div class="auth-texture auth-texture--noise" aria-hidden="true"></div>
+    <div class="auth-texture auth-texture--radial" aria-hidden="true"></div>
+
+    <main class="auth-shell">
+        <section class="auth-hero">
+            <p class="auth-eyebrow">Join The Signal</p>
+            <h1>Spin up your Vantage identity.</h1>
+            <p class="auth-lede">
+                Provision credentials that unlock immersive diagnostics, stakeholder storytelling, and proactive alerts.
+            </p>
+            <ul class="auth-highlights">
+                <li>Create narratives for each stakeholder</li>
+                <li>Layered security with role-based access</li>
+                <li>Telemetry that reads like cinema</li>
+            </ul>
+        </section>
+
+        <section class="auth-panel">
+            <form id="signup-form" class="auth-form">
+                <div class="form-header">
+                    <h2>Create Account</h2>
+                    <p>Enter your onboarding email and craft a secure passphrase.</p>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="cedriclaja@gmail.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" name="password" placeholder="••••••••" required>
+                        <button type="button" class="password-toggle" id="toggle-password" title="Show/Hide password">
+                            <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit">Sign Up</button>
+                <div id="message"></div>
+                <p class="signup-link">Already have an account? <a href="login.html">Sign in</a></p>
+                <a href="index.html" class="back-btn">← Back to Home</a>
+            </form>
+        </section>
+    </main>
+    <script src="signup.js"></script>
+</body>
+</html>
