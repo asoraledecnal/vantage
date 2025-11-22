@@ -52,8 +52,8 @@ Project Vantage is a web application designed to provide a user-friendly dashboa
 
 1.  **Clone the Repository:**
     ```bash
-    git clone https://github.com/asoraledecnal/project-vantage.git
-    cd project-vantage
+    git clone https://github.com/asoraledecnal/vantage
+    cd vantage
     ```
 
 2.  **Set Up the Backend:**
