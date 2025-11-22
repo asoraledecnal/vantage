@@ -1,8 +1,8 @@
-# Project Vantage: A Web-Based Network Monitoring Dashboard
+# Vantage - Network Surveillance Dashboard
 
 ## Project Overview
 
-Project Vantage is a web application designed to provide a user-friendly dashboard for monitoring network hosts. It features a secure user authentication system and a modular, extensible architecture for adding new monitoring tools. The frontend is a modern, responsive application built with Next.js and Tailwind CSS, while the backend is powered by a Python Flask server with a persistent PostgreSQL database (with a fallback to SQLite).
+Vantage is a web application designed to provide a user-friendly dashboard for monitoring network hosts. It features a secure user authentication system and a modular, extensible architecture for adding new monitoring tools. The frontend is a modern, responsive application built with Next.js and Tailwind CSS, while the backend is powered by a Python Flask server with a persistent PostgreSQL database (with a fallback to SQLite).
 
 ## Features
 
