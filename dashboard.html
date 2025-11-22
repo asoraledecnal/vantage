@@ -16,17 +16,16 @@
 <body id="dashboard-page">
     <div class="texture-layer texture-layer--noise" aria-hidden="true"></div>
     <div class="texture-layer texture-layer--vignette" aria-hidden="true"></div>
+    <div id="error-container"></div> <!-- For custom error messages -->
 
     <header class="nav" id="site-header">
       <div class="nav__logo">
         <a href="index.html" aria-label="Back to home">Vantage</a>
       </div>
-
       <button class="nav__toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
         <span></span>
         <span></span>
       </button>
-
       <nav class="nav__links" id="nav-links">
         <a href="index.html">Home</a>
         <a href="#" id="logout-btn">Logout</a>
@@ -48,21 +47,21 @@
             <div class="diagnostics-panel">
                 <div class="tabs-wrapper">
                     <div class="tabs-container">
-                        <button class="tab-button active" data-tool="ping">
-                            <span class="tab-icon">📶</span>
-                            <span class="tab-label">Ping</span>
-                        </button>
-                        <button class="tab-button" data-tool="port-scan">
+                        <button class="tab-button active" data-tool="tcp_ping">
                             <span class="tab-icon">🔌</span>
-                            <span class="tab-label">Port Scan</span>
+                            <span class="tab-label">TCP Port Check</span>
                         </button>
-                        <button class="tab-button" data-tool="traceroute">
-                            <span class="tab-icon">🗺️</span>
-                            <span class="tab-label">Traceroute</span>
+                        <button class="tab-button" data-tool="port_scan">
+                            <span class="tab-icon">🔍</span>
+                            <span class="tab-label">Single Port Scan</span>
+                        </button>
+                        <button class="tab-button" data-tool="geoip">
+                            <span class="tab-icon">🌍</span>
+                            <span class="tab-label">IP Geolocation</span>
                         </button>
                         <button class="tab-button" data-tool="dns">
                             <span class="tab-icon">🌐</span>
-                            <span class="tab-label">DNS</span>
+                            <span class="tab-label">DNS Lookup</span>
                         </button>
                         <button class="tab-button" data-tool="speed">
                             <span class="tab-icon">⚡</span>
@@ -73,58 +72,65 @@
                 </div>
 
                 <div class="tab-content-wrapper">
-                    <div id="ping-tab" class="tab-content active">
+                    <!-- TCP Port Check (formerly Ping) -->
+                    <div id="tcp_ping-tab" class="tab-content active">
                         <div class="widget">
-                            <h3><span class="icon">📶</span>Ping Utility</h3>
-                            <form id="ping-form">
-                                <input type="text" id="ping-host" placeholder="Enter host or IP (e.g., google.com)">
-                                <button type="submit">Ping</button>
+                            <h3><span class="icon">🔌</span>TCP Port Check</h3>
+                            <p class="widget-desc">Checks if a port on a host is open and measures connection time.</p>
+                            <form id="tcp-ping-form">
+                                <input type="text" name="host" placeholder="Enter host or IP (e.g., google.com)" required>
+                                <input type="number" name="port" placeholder="Port (e.g., 443)" value="443" required>
+                                <button type="submit">Check Port</button>
                             </form>
-                            <div id="ping-results-summary" class="results-summary" style="display: none;"></div>
-                            <details id="ping-details" class="log-details" style="display: none;">
-                                <summary>Show Full Log</summary>
-                                <pre id="ping-results-raw" class="results-area"></pre>
-                            </details>
+                            <div id="tcp-ping-results" class="results-summary" style="display: none;"></div>
                         </div>
                     </div>
 
-                    <div id="port-scan-tab" class="tab-content">
+                    <!-- Port Scanner -->
+                    <div id="port_scan-tab" class="tab-content">
                         <div class="widget">
-                            <h3><span class="icon">🔌</span>Port Scanner</h3>
+                            <h3><span class="icon">🔍</span>Single Port Scanner</h3>
+                            <p class="widget-desc">Determines if a specific port is open or closed on a host.</p>
                             <form id="port-scan-form">
-                                <input type="text" id="scan-host" placeholder="Enter host or IP">
-                                <input type="number" id="scan-port" placeholder="Port (e.g., 80, 443)">
-                                <button type="submit">Scan</button>
+                                <input type="text" name="host" placeholder="Enter host or IP" required>
+                                <input type="number" name="port" placeholder="Port (e.g., 80)" required>
+                                <button type="submit">Scan Port</button>
                             </form>
                             <div id="port-scan-results" class="results-summary" style="display: none;"></div>
                         </div>
                     </div>
 
-                    <div id="traceroute-tab" class="tab-content">
+                    <!-- IP Geolocation (formerly Traceroute) -->
+                    <div id="geoip-tab" class="tab-content">
                         <div class="widget">
-                            <h3><span class="icon">🗺️</span>Traceroute Utility</h3>
-                            <form id="traceroute-form">
-                                <input type="text" id="trace-host" placeholder="Enter host or IP (e.g., google.com)">
-                                <button type="submit">Trace</button>
+                            <h3><span class="icon">🌍</span>IP Geolocation Lookup</h3>
+                            <p class="widget-desc">Finds the physical location and network owner of an IP address or host.</p>
+                            <form id="geoip-form">
+                                <input type="text" name="host" placeholder="Enter host or IP (e.g., 8.8.8.8)" required>
+                                <button type="submit">Locate</button>
                             </form>
-                            <pre id="traceroute-results" class="results-area"></pre>
+                            <div id="geoip-results" class="results-summary" style="display: none;"></div>
                         </div>
                     </div>
 
+                    <!-- DNS Resolver -->
                     <div id="dns-tab" class="tab-content">
                         <div class="widget">
                             <h3><span class="icon">🌐</span>DNS Resolver</h3>
+                            <p class="widget-desc">Retrieves DNS records (A, AAAA, MX) for a given domain.</p>
                             <form id="dns-form">
-                                <input type="text" id="dns-host" placeholder="Enter domain (e.g., example.com)">
+                                <input type="text" name="host" placeholder="Enter domain (e.g., example.com)" required>
                                 <button type="submit">Resolve</button>
                             </form>
                             <div id="dns-results" class="results-summary" style="display: none;"></div>
                         </div>
                     </div>
 
+                    <!-- Speed Test -->
                     <div id="speed-tab" class="tab-content">
                         <div class="widget">
                             <h3><span class="icon">⚡</span>Internet Speed Test</h3>
+                            <p class="widget-desc">Measures the network speed of the server environment.</p>
                             <form id="speed-form"> 
                                 <button type="submit">Start Test</button>
                             </form>
@@ -137,7 +143,7 @@
     </main>
 
     <footer class="site-footer">
-      <p>&copy; 2025 Vantage. Inspired by Corn Revolution, built for Surveillance</p>
+      <p>&copy; 2025 Vantage. Network diagnostics for the modern web.</p>
     </footer>
 
     <script src="https://unpkg.com/gsap@3/dist/gsap.min.js" defer></script>
