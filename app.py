@@ -14,6 +14,8 @@ from flask_bcrypt import Bcrypt
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from pythonping import ping # Import pythonping
+import dns.resolver
+import speedtest
 
 # --- Helper function for input validation ---
 def is_valid_host(host):
@@ -294,6 +296,65 @@ def traceroute_host():
         return jsonify({'host': host, 'status': 'failed', 'error': 'Traceroute timed out'}), 504
     except Exception as e:
         return jsonify({'host': host, 'status': 'error', 'error': str(e)}), 500
+
+@app.route('/api/dns', methods=['POST'])
+def dns_lookup():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    host = data.get('host')
+
+    if not is_valid_host(host):
+        return jsonify({"error": "Invalid or malicious host provided"}), 400
+    
+    records = {}
+    try:
+        # A record
+        a_records = dns.resolver.resolve(host, 'A')
+        records['A'] = [r.to_text() for r in a_records]
+        
+        # AAAA record
+        try:
+            aaaa_records = dns.resolver.resolve(host, 'AAAA')
+            records['AAAA'] = [r.to_text() for r in aaaa_records]
+        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
+            records['AAAA'] = []
+
+        # MX record
+        try:
+            mx_records = dns.resolver.resolve(host, 'MX')
+            records['MX'] = sorted([f"{r.preference} {r.exchange.to_text()}" for r in mx_records])
+        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
+            records['MX'] = []
+            
+        return jsonify({'host': host, 'records': records}), 200
+        
+    except dns.resolver.NXDOMAIN:
+        return jsonify({'host': host, 'error': 'Domain not found'}), 404
+    except Exception as e:
+        return jsonify({'host': host, 'error': str(e)}), 500
+
+@app.route('/api/speed-test', methods=['POST'])
+def speed_test():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    try:
+        st = speedtest.Speedtest()
+        st.get_best_server()
+        download_speed = st.download() / 1_000_000  # Convert to Mbps
+        upload_speed = st.upload() / 1_000_000  # Convert to Mbps
+        ping_latency = st.results.ping
+
+        return jsonify({
+            'download': f"{download_speed:.2f}",
+            'upload': f"{upload_speed:.2f}",
+            'ping': f"{ping_latency:.2f}"
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 if __name__ == '__main__':

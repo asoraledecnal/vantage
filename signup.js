@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Configuration ---
-  const BACKEND_URL = "https://vantage-backend-api.onrender.com"
+  const BACKEND_URL = "http://127.0.0.1:5000"
 
   const signupForm = document.getElementById("signup-form")
   const messageDiv = document.getElementById("message")
