@@ -4,6 +4,7 @@ import subprocess
 import socket
 import re
 import ipaddress
+from functools import wraps
 from flask import Flask, request, jsonify, session
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_cors import CORS
@@ -21,25 +22,30 @@ import speedtest
 def is_valid_host(host):
     """
     Validates if the provided host is a valid hostname or IP address.
-    Prevents command injection by disallowing special characters.
+    Prevents argument injection by disallowing leading hyphens and other special characters.
     """
-    if not host or not isinstance(host, str):
+    if not host or not isinstance(host, str) or host.startswith('-'):
         return False
-    
+
     # Disallow characters that could be used for command injection
-    if any(char in host for char in ";|&`$()<>"):
+    if any(char in host for char in " ;|&`$()<>\\n\\r"):
         return False
-        
+
     # Check for valid IP address format
     try:
         ipaddress.ip_address(host)
-        return True # It's a valid IP address
+        return True  # It's a valid IP address
     except ValueError:
-        pass # Not an IP address, check if it's a hostname
-        
+        pass  # Not an IP address, check if it's a hostname
+
     # Check for valid hostname format (simple regex)
     # Allows for domain names like 'google.com' or 'sub.domain.co.uk'
-    hostname_regex = re.compile(r"^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}$")
+    # This regex is strict and does not allow spaces or other risky characters.
+    hostname_regex = re.compile(
+        r"^(?:[a-zA-Z0-9]"  # First character of a label
+        r"(?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)"  # Subsequent characters of a label
+        r"+[a-zA-Z]{2,6}$"  # TLD
+    )
     return hostname_regex.match(host) is not None
 
 # --- App Initialization and Configuration ---
@@ -53,8 +59,11 @@ limiter = Limiter(
 )
 
 # This is the crucial configuration for secure, cross-domain sessions.
-# In a real production app, the secret key should come from an environment variable.
-app.secret_key = os.environ.get('SECRET_KEY', 'vantage.project2025')
+# The secret key MUST be set in the environment for production.
+app.secret_key = os.environ.get('SECRET_KEY')
+if not app.secret_key:
+    raise ValueError("FATAL: SECRET_KEY environment variable is not set. The application cannot run in an insecure state.")
+
 app.config['SESSION_COOKIE_SECURE'] = True  # Ensures cookies are only sent over HTTPS
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Allows cross-domain cookie sending
 
@@ -126,6 +135,16 @@ class Incident(db.Model):
     def __repr__(self):
         return f'<Incident {self.title}>'
 
+# --- Decorators ---
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({"error": "Unauthorized"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 # --- API Endpoints ---
 @app.route('/api/signup', methods=['POST'])
 @limiter.limit("5 per minute")
@@ -185,18 +204,14 @@ def check_session():
 
 # This is an example of a protected API endpoint
 @app.route('/api/dashboard_data', methods=['GET'])
+@login_required
 def get_dashboard_data():
-    if 'user_id' not in session:
-        return jsonify({"message": "Unauthorized"}), 401
-    
     return jsonify({"message": f"Welcome to your dashboard, user #{session['user_id']}!"})
 
 
 @app.route('/api/ping', methods=['POST'])
+@login_required
 def ping_host():
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
     data = request.get_json()
     host = data.get('host')
 
@@ -234,10 +249,8 @@ def ping_host():
 
 
 @app.route('/api/port_scan', methods=['POST'])
+@login_required
 def port_scan():
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
     data = request.get_json()
     host = data.get('host')
     port_str = data.get('port')
@@ -272,10 +285,8 @@ def port_scan():
 
 
 @app.route('/api/traceroute', methods=['POST'])
+@login_required
 def traceroute_host():
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
     data = request.get_json()
     host = data.get('host')
 
@@ -298,10 +309,8 @@ def traceroute_host():
         return jsonify({'host': host, 'status': 'error', 'error': str(e)}), 500
 
 @app.route('/api/dns', methods=['POST'])
+@login_required
 def dns_lookup():
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
     data = request.get_json()
     host = data.get('host')
 
@@ -336,10 +345,8 @@ def dns_lookup():
         return jsonify({'host': host, 'error': str(e)}), 500
 
 @app.route('/api/speed-test', methods=['POST'])
+@login_required
 def speed_test():
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-    
     try:
         st = speedtest.Speedtest()
         st.get_best_server()

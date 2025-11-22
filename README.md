@@ -2,51 +2,55 @@
 
 ## Project Overview
 
-Vantage is a web application designed to provide a user-friendly dashboard for monitoring network hosts. It features a secure user authentication system and a modular, extensible architecture for adding new monitoring tools. The frontend is a modern, responsive application built with Next.js and Tailwind CSS, while the backend is powered by a Python Flask server with a persistent PostgreSQL database (with a fallback to SQLite).
+Vantage is a web application designed to provide a user-friendly dashboard for network diagnostics. It features a secure user authentication system and a suite of essential network tools. The frontend is a lightweight, single-page application built with **vanilla HTML, CSS, and JavaScript**, while the backend is powered by a robust **Python Flask** server with a persistent PostgreSQL database.
+
+This project prioritizes security, maintainability, and ease of deployment.
 
 ## Features
 
 ### Frontend
-*   **Modern UI:** A responsive and interactive user interface built with Next.js and styled with Tailwind CSS.
-*   **Component-Based Architecture:** Utilizes React and Radix UI for a modular and maintainable component structure.
-*   **User Authentication Pages:** Dedicated and styled pages for user registration and login.
-*   **Interactive Forms:** Client-side JavaScript handles form submissions asynchronously, providing real-time feedback without page reloads.
-*   **Dashboard:** A secure page accessible only after login, designed to host monitoring widgets.
-*   **Monitoring Tools:** Includes Ping, Port Scan, and Traceroute utilities.
-*   **Logout Functionality:** A logout button on the dashboard to end the user session.
+*   **Minimalist UI:** A clean and responsive user interface built with standard HTML and CSS.
+*   **Dynamic Tabs:** A tab-based interface to switch between different network tools without page reloads.
+*   **Asynchronous Tools:** Client-side JavaScript uses the Fetch API to interact with the backend, providing real-time results for all network tools.
+*   **User Authentication:** Dedicated pages for user signup and login.
+*   **Secure Dashboard:** A protected dashboard accessible only after a successful login.
+*   **Core Network Tools:** Includes Ping, Port Scan, Traceroute, DNS Lookup, and a Network Speed Test.
+*   **Notifications:** Displays clear success or error messages for a better user experience.
 
 ### Backend
-*   **RESTful API:** A set of API endpoints to handle user authentication and monitoring tasks.
-    *   `POST /api/signup`: Handles new user registration with password hashing.
-    *   `POST /api/login`: Authenticates users against the database.
-    *   `POST /api/logout`: Clears the user session.
-    *   `GET /api/check_session`: Checks if a user is logged in.
-    *   `POST /api/ping`: Executes a ping to a target host.
-    *   `POST /api/port_scan`: Scans a specific port on a target host.
-    *   `POST /api/traceroute`: Performs a traceroute to a target host.
-*   **Database:** Utilizes a PostgreSQL database via Flask-SQLAlchemy for user data, with SQLite as a fallback for local development.
-*   **Password Security:** Passwords are securely hashed using Flask-Bcrypt.
-*   **Rate Limiting:** Implemented using Flask-Limiter to prevent abuse.
-*   **CORS Configuration:** Enabled to allow cross-origin requests from the frontend.
-*   **Production-Ready Setup:** Includes `gunicorn` for deployment.
+*   **RESTful API:** A set of secure API endpoints for user authentication and network diagnostics.
+*   **Secure Authentication:**
+    *   `POST /api/signup`: Registers new users with securely hashed passwords.
+    *   `POST /api/login`: Authenticates users and manages sessions.
+    *   `POST /api/logout`: Securely terminates user sessions.
+    *   `GET /api/check_session`: Verifies a user's logged-in status.
+*   **Protected Endpoints:** All diagnostic tools require a valid user session.
+*   **Input Validation:** Implements strict validation on all user inputs (e.g., hostnames, ports) to prevent command injection and other attacks.
+*   **Database:** Uses PostgreSQL via Flask-SQLAlchemy for reliable data persistence.
+*   **Security Measures:**
+    *   Passwords are hashed with Flask-Bcrypt.
+    *   Rate limiting is enforced with Flask-Limiter to prevent abuse.
+    *   Secure cookie settings (HTTPOnly, SameSite) are used for session management.
+*   **Production-Ready:** Deploys with a `gunicorn` WSGI server inside a Docker container.
 
 ---
 
 ## Technical Stack
 
-*   **Frontend:** Next.js (React), Tailwind CSS, Radix UI
-*   **Backend:** Python 3, Flask
-*   **Database:** PostgreSQL (primary), SQLite (fallback)
-*   **Libraries/Extensions:** Flask-Bcrypt, Flask-Cors, Flask-Limiter, Flask-SQLAlchemy, Gunicorn, pythonping
+*   **Frontend:** HTML, CSS, JavaScript (Vanilla)
+*   **Backend:** Python 3.11, Flask
+*   **Database:** PostgreSQL
+*   **Key Python Libraries:** Flask-SQLAlchemy, Flask-Bcrypt, Flask-Limiter, gunicorn, pythonping, dnspython, speedtest-cli
+*   **Deployment:** Docker, Render
 
 ---
 
 ## Project Setup and Installation
 
 ### Prerequisites
-*   Python 3.8+
+*   Python 3.11+
 *   `pip` (Python package installer)
-*   Node.js and `npm` (or `yarn`/`pnpm`)
+*   A tool to run a local web server (e.g., VS Code's "Live Server" extension or Python's `http.server` module).
 
 ### Installation Steps
 
@@ -72,49 +76,61 @@ Vantage is a web application designed to provide a user-friendly dashboard for m
         ```bash
         pip install -r requirements.txt
         ```
+    *   **Set Environment Variables:**
+        Create a `.env` file in the root directory and add the following variables. This is crucial for security.
+        ```
+        SECRET_KEY='a_very_strong_and_random_secret_key'
+        DATABASE_URL='sqlite:///database.db' # For local development
+        ```
     *   **Initialize the Database:**
         ```bash
-        export FLASK_APP=app.py # (Use 'set FLASK_APP=app.py' in Windows CMD)
+        # On macOS/Linux
+        export FLASK_APP=app.py
+        flask shell
+
+        # On Windows CMD
+        set FLASK_APP=app.py
         flask shell
         ```
-        In the Python shell (`>>>`), run:
+        In the Python shell that opens, run the following commands:
         ```python
         from app import db
         db.create_all()
         exit()
         ```
 
-3.  **Set Up the Frontend:**
-    *   **Install Node.js Dependencies:**
+### Running the Application Locally
+
+1.  **Run the Backend Server:**
+    In your terminal, with the virtual environment activated, run:
+    ```bash
+    python app.py
+    ```
+    The backend will be running at `http://127.0.0.1:5000`.
+
+2.  **Run the Frontend:**
+    Since the frontend consists of static HTML, CSS, and JS files, you need to serve them via a local web server.
+    *   **Option A (Recommended): Using VS Code's Live Server Extension:**
+        Right-click on `index.html` and select "Open with Live Server".
+    *   **Option B: Using Python's built-in server:**
+        Open a **new terminal** and run:
         ```bash
-        npm install
+        python -m http.server 8080
         ```
-
-### Running the Application
-
-1.  **Run the Backend Development Server:**
-    ```bash
-    flask run
-    ```
-    The backend will be running on `http://127.0.0.1:5000`. Keep this terminal open.
-
-2.  **Run the Frontend Development Server:**
-    In a separate terminal, run:
-    ```bash
-    npm run dev
-    ```
-    The frontend will be running on `http://localhost:3000`.
+        Then, open your browser and navigate to `http://127.0.0.1:8080`.
 
 ---
 
-## Deployment Strategy
+## Deployment on Render
 
-### Backend Deployment (e.g., on Render)
-1.  Ensure all code is pushed to a GitHub repository.
-2.  Create a new "Web Service" on Render and connect it to the repository.
-3.  Render can use the `render.yaml` file to configure the service.
+This project is configured for easy deployment on **Render** using Docker.
 
-### Frontend Deployment (e.g., on Vercel or Netlify)
-1.  The frontend is a Next.js application and can be deployed to any platform that supports Next.js, such as Vercel (recommended) or Netlify.
-2.  Connect your repository to the hosting provider.
-3.  Before deploying, ensure the backend URL in your frontend code points to the public URL of your deployed backend.
+1.  **Push to GitHub:** Ensure all your code is pushed to a public or private GitHub repository.
+2.  **Create a New Web Service:** On the Render dashboard, create a new "Web Service" and connect it to your GitHub repository.
+3.  **Automatic Configuration:** Render will automatically detect the `render.yaml` file in your repository. This file configures everything for you:
+    *   It builds the Docker image from your `Dockerfile`.
+    *   It creates a **PostgreSQL database** and automatically injects the `DATABASE_URL`.
+    *   It generates a secure `SECRET_KEY` for your production environment.
+4.  **Deploy:** Click "Create Web Service" and wait for the deployment to complete.
+
+Your application backend will be live at the URL provided by Render. You can then host the static frontend files on a service like **GitHub Pages** or any static hosting provider, making sure to configure the `API_BASE_URL` in `dashboard.js` to point to your live Render backend URL.
