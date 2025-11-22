@@ -4,213 +4,145 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Vantage</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="dashboard.css">
 </head>
 <body id="dashboard-page">
-    <header>
-        <nav class="navbar">
-            <div class="logo">
-                <a href="index.html"><img src="Vantage Logo.png" alt="Vantage Logo"></a>
-            </div>
-            <div class="right-container">
-                <ul class="nav-links">
-                    <li><a href="#" id="logout-btn">Logout</a></li>
-                </ul>
-            </div>
-        </nav>
+    <div class="texture-layer texture-layer--noise" aria-hidden="true"></div>
+    <div class="texture-layer texture-layer--vignette" aria-hidden="true"></div>
+
+    <header class="nav" id="site-header">
+      <div class="nav__logo">
+        <a href="index.html" aria-label="Back to home">Vantage</a>
+      </div>
+
+      <button class="nav__toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="nav__links" id="nav-links">
+        <a href="index.html">Home</a>
+        <a href="#" id="logout-btn">Logout</a>
+      </nav>
     </header>
 
     <main class="dashboard-container">
         <section class="dashboard-hero">
-            <div class="hero-text">
-                <p class="hero-eyebrow">Live Diagnostics • Edge to Core</p>
-                <h1>Vantage Command Console</h1>
+            <div class="scene__inner scene__inner--hero">
+                <div class="hero-eyebrow">Live Diagnostics • Command Console</div>
+                <h1 class="hero-title">Network Diagnostics</h1>
                 <p class="hero-lede">
-                    Monitor signal health, interrogate routes, and narrate incidents with tools that feel as cinematic as the main site.
+                    Select a diagnostic tool and monitor your network in real-time with precision and clarity.
                 </p>
-                <div class="hero-tags">
-                    <span>Realtime Ping</span>
-                    <span>Port Intelligence</span>
-                    <span>Route Storyboard</span>
-                </div>
             </div>
-            <div class="hero-metrics">
-                <article class="metric-card">
-                    <p class="metric-label">Median Latency</p>
-                    <p class="metric-value">23 ms</p>
-                    <p class="metric-trend trend-down">-4% vs last hour</p>
-                </article>
-                <article class="metric-card">
-                    <p class="metric-label">Active Services</p>
-                    <p class="metric-value">128</p>
-                    <p class="metric-trend">12 monitored edge nodes</p>
-                </article>
-                <article class="metric-card">
-                    <p class="metric-label">Route Integrity</p>
-                    <p class="metric-value">99.3%</p>
-                    <p class="metric-trend trend-up">+0.8% stability</p>
-                </article>
-            </div>
-        </section>
-
-        <section class="overview-grid">
-            <article class="overview-card">
-                <header>
-                    <p>Signal Quality</p>
-                    <span class="pill pill-good">Optimal</span>
-                </header>
-                <h3>54 regions online</h3>
-                <p>Edge sensors report normal behavior with minor variance in APAC.</p>
-            </article>
-            <article class="overview-card">
-                <header>
-                    <p>Incidents</p>
-                    <span class="pill pill-warn">Watching</span>
-                </header>
-                <h3>3 narratives</h3>
-                <ul>
-                    <li>Packet loss — Singapore IX</li>
-                    <li>Flapping route — Paris edge</li>
-                    <li>Auth retries — Dallas</li>
-                </ul>
-            </article>
-            <article class="overview-card">
-                <header>
-                    <p>Automation</p>
-                    <span class="pill">Playbooks</span>
-                </header>
-                <h3>18 auto-resolves today</h3>
-                <p>Latest: throttled noisy tenant traffic in under 14 seconds.</p>
-            </article>
-            <article class="overview-card">
-                <header>
-                    <p>Next Checks</p>
-                    <span class="pill">Queue</span>
-                </header>
-                <h3>5 scheduled sweeps</h3>
-                <p>Nightly deep traceroute and critical API heartbeat verification.</p>
-            </article>
         </section>
 
         <section class="diagnostics-layout">
             <div class="diagnostics-panel">
-                <div class="panel-header">
-                    <div>
-                        <p class="panel-label">Toolset</p>
-                        <h2>Network Diagnostics</h2>
-                    </div>
-                    <p class="panel-copy">Jump between ping, port intelligence, and traceroute without leaving the story view.</p>
-                </div>
-
-                <div class="tabs">
-                    <button class="tab-link active" data-tab="ping-tab">Ping</button>
-                    <button class="tab-link" data-tab="port-scan-tab">Port Scan</button>
-                    <button class="tab-link" data-tab="traceroute-tab">Traceroute</button>
-                </div>
-
-                <div id="ping-tab" class="tab-content active">
-                    <div class="widget">
-                        <h3><span class="icon">📶</span>Ping Utility</h3>
-                        <form id="ping-form">
-                            <input type="text" id="ping-host" placeholder="Enter host or IP (e.g., google.com)">
-                            <button type="submit">Ping</button>
-                        </form>
-                        <div id="ping-results-summary" class="results-summary" style="display: none;"></div>
-                        <details id="ping-details" class="log-details" style="display: none;">
-                            <summary>Show Full Log</summary>
-                            <pre id="ping-results-raw" class="results-area"></pre>
-                        </details>
+                <div class="tabs-wrapper">
+                    <div class="tabs-container">
+                        <button class="tab-button active" data-tool="ping">
+                            <span class="tab-icon">📶</span>
+                            <span class="tab-label">Ping</span>
+                        </button>
+                        <button class="tab-button" data-tool="port-scan">
+                            <span class="tab-icon">🔌</span>
+                            <span class="tab-label">Port Scan</span>
+                        </button>
+                        <button class="tab-button" data-tool="traceroute">
+                            <span class="tab-icon">🗺️</span>
+                            <span class="tab-label">Traceroute</span>
+                        </button>
+                        <button class="tab-button" data-tool="dns">
+                            <span class="tab-icon">🌐</span>
+                            <span class="tab-label">DNS</span>
+                        </button>
+                        <button class="tab-button" data-tool="speed">
+                            <span class="tab-icon">⚡</span>
+                            <span class="tab-label">Speed Test</span>
+                        </button>
+                        <div class="tab-underline"></div>
                     </div>
                 </div>
 
-                <div id="port-scan-tab" class="tab-content">
-                    <div class="widget">
-                        <h3><span class="icon">🔌</span>Port Scanner</h3>
-                        <form id="port-scan-form">
-                            <input type="text" id="scan-host" placeholder="Enter host or IP">
-                            <input type="number" id="scan-port" placeholder="Port (e.g., 80, 443)">
-                            <button type="submit">Scan</button>
-                        </form>
-                        <div id="port-scan-results" class="results-summary" style="display: none;"></div>
+                <div class="tab-content-wrapper">
+                    <div id="ping-tab" class="tab-content active">
+                        <div class="widget">
+                            <h3><span class="icon">📶</span>Ping Utility</h3>
+                            <form id="ping-form">
+                                <input type="text" id="ping-host" placeholder="Enter host or IP (e.g., google.com)">
+                                <button type="submit">Ping</button>
+                            </form>
+                            <div id="ping-results-summary" class="results-summary" style="display: none;"></div>
+                            <details id="ping-details" class="log-details" style="display: none;">
+                                <summary>Show Full Log</summary>
+                                <pre id="ping-results-raw" class="results-area"></pre>
+                            </details>
+                        </div>
                     </div>
-                </div>
 
-                <div id="traceroute-tab" class="tab-content">
-                    <div class="widget">
-                        <h3><span class="icon">🗺️</span>Traceroute Utility</h3>
-                        <form id="traceroute-form">
-                            <input type="text" id="trace-host" placeholder="Enter host or IP (e.g., google.com)">
-                            <button type="submit">Trace</button>
-                        </form>
-                        <pre id="traceroute-results" class="results-area"></pre>
+                    <div id="port-scan-tab" class="tab-content">
+                        <div class="widget">
+                            <h3><span class="icon">🔌</span>Port Scanner</h3>
+                            <form id="port-scan-form">
+                                <input type="text" id="scan-host" placeholder="Enter host or IP">
+                                <input type="number" id="scan-port" placeholder="Port (e.g., 80, 443)">
+                                <button type="submit">Scan</button>
+                            </form>
+                            <div id="port-scan-results" class="results-summary" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <div id="traceroute-tab" class="tab-content">
+                        <div class="widget">
+                            <h3><span class="icon">🗺️</span>Traceroute Utility</h3>
+                            <form id="traceroute-form">
+                                <input type="text" id="trace-host" placeholder="Enter host or IP (e.g., google.com)">
+                                <button type="submit">Trace</button>
+                            </form>
+                            <pre id="traceroute-results" class="results-area"></pre>
+                        </div>
+                    </div>
+
+                    <div id="dns-tab" class="tab-content">
+                        <div class="widget">
+                            <h3><span class="icon">🌐</span>DNS Resolver</h3>
+                            <form id="dns-form">
+                                <input type="text" id="dns-host" placeholder="Enter domain (e.g., example.com)">
+                                <button type="submit">Resolve</button>
+                            </form>
+                            <div id="dns-results" class="results-summary" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <div id="speed-tab" class="tab-content">
+                        <div class="widget">
+                            <h3><span class="icon">⚡</span>Internet Speed Test</h3>
+                            <form id="speed-form"> 
+                                <button type="submit">Start Test</button>
+                            </form>
+                            <div id="speed-results" class="results-summary" style="display: none;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <aside class="intel-panel">
-                <div class="intel-card">
-                    <h3>Live Incident Timeline</h3>
-                    <ul class="timeline">
-                        <li>
-                            <span>12:45</span>
-                            <div>
-                                <strong>Route recalculated</strong>
-                                <p>Automatic reroute around packet loss detected on SEA-IX.</p>
-                            </div>
-                        </li>
-                        <li>
-                            <span>11:12</span>
-                            <div>
-                                <strong>Port 443 anomaly</strong>
-                                <p>High handshake latency noted on EU perimeter. Monitoring.</p>
-                            </div>
-                        </li>
-                        <li>
-                            <span>09:55</span>
-                            <div>
-                                <strong>Traceroute sweep</strong>
-                                <p>Benchmark run completed for 15 core services.</p>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="intel-card">
-                    <h3>Signal Watchlist</h3>
-                    <ul class="watchlist">
-                        <li>
-                            <div>
-                                <p>apac-auth.edge</p>
-                                <span>Latency</span>
-                            </div>
-                            <span class="pill pill-warn">52 ms</span>
-                        </li>
-                        <li>
-                            <div>
-                                <p>eu-core-routing</p>
-                                <span>Route changes</span>
-                            </div>
-                            <span class="pill pill-good">Stable</span>
-                        </li>
-                        <li>
-                            <div>
-                                <p>us-south-load</p>
-                                <span>Throughput</span>
-                            </div>
-                            <span class="pill">71%</span>
-                        </li>
-                    </ul>
-                </div>
-            </aside>
         </section>
     </main>
 
-    <!-- added footer with copyright -->
-    <footer>
-        <p>&copy; 2025 Vantage by FrLaRo. All rights reserved.</p>
+    <footer class="site-footer">
+      <p>&copy; 2025 Vantage. Inspired by Corn Revolution, built for Surveillance</p>
     </footer>
 
-    <script src="dashboard.js"></script>
+    <script src="https://unpkg.com/gsap@3/dist/gsap.min.js" defer></script>
+    <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js" defer></script>
+    <script src="main.js" defer></script>
+    <script src="dashboard.js" defer></script>
 </body>
 </html>

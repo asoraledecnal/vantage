@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  checkAuth()
+  //checkAuth()
 
   // Logout functionality
   const logoutBtn = document.getElementById("logout-btn")
@@ -32,26 +32,65 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("Logout error:", error)
       }
       window.location.href = "login.html"
-    })  
+    })
   }
 
-  // Tab switching
-  const tabLinks = document.querySelectorAll(".tab-link")
+  const tabButtons = document.querySelectorAll(".tab-button")
+  const tabUnderline = document.querySelector(".tab-underline")
   const tabContents = document.querySelectorAll(".tab-content")
 
-  tabLinks.forEach((link) => {
-    link.addEventListener("click", (e) => {
-      e.preventDefault()
+  const updateTabUnderline = (activeButton) => {
+    const underlineWidth = activeButton.offsetWidth
+    const underlineLeft = activeButton.offsetLeft
+    tabUnderline.style.width = `${underlineWidth}px`
+    tabUnderline.style.left = `${underlineLeft}px`
+  }
 
-      // Remove active class from all tabs
-      tabLinks.forEach((tab) => tab.classList.remove("active"))
-      tabContents.forEach((content) => content.classList.remove("active"))
+  const activateTab = (tool) => {
+    // Remove active class from all buttons
+    tabButtons.forEach((btn) => btn.classList.remove("active"))
 
-      // Add active class to clicked tab
-      link.classList.add("active")
-      const tabId = link.getAttribute("data-tab")
-      document.getElementById(tabId).classList.add("active")
+    // Remove active class from all contents
+    tabContents.forEach((content) => content.classList.remove("active"))
+
+    // Find and activate the clicked button
+    const activeButton = document.querySelector(`[data-tool="${tool}"]`)
+    if (activeButton) {
+      activeButton.classList.add("active")
+      updateTabUnderline(activeButton)
+    }
+
+    // Activate the corresponding content
+    const activeContent = document.getElementById(`${tool}-tab`)
+    if (activeContent) {
+      activeContent.classList.add("active")
+    }
+  }
+
+  // Add click listeners to all tab buttons
+  tabButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const tool = button.dataset.tool
+      activateTab(tool)
     })
+  })
+
+  // Initialize with first tab
+  if (tabButtons.length > 0) {
+    updateTabUnderline(tabButtons[0])
+  }
+
+  // Keyboard navigation
+  document.addEventListener("keydown", (e) => {
+    const activeIndex = Array.from(tabButtons).findIndex((btn) => btn.classList.contains("active"))
+
+    if (e.key === "ArrowLeft" && activeIndex > 0) {
+      const prevButton = tabButtons[activeIndex - 1]
+      activateTab(prevButton.dataset.tool)
+    } else if (e.key === "ArrowRight" && activeIndex < tabButtons.length - 1) {
+      const nextButton = tabButtons[activeIndex + 1]
+      activateTab(nextButton.dataset.tool)
+    }
   })
 
   // Ping functionality
@@ -148,6 +187,64 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   }
 
+  const dnsForm = document.getElementById("dns-form")
+  if (dnsForm) {
+    dnsForm.addEventListener("submit", async (e) => {
+      e.preventDefault()
+      const host = document.getElementById("dns-host").value
+
+      try {
+        const response = await fetch("https://project-vantage-backend-ih0i.onrender.com/api/dns", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ host }),
+        })
+
+        const result = await response.json()
+
+        if (response.ok) {
+          displayDnsResults(result)
+        } else {
+          displayError("DNS Lookup failed", result.message)
+        }
+      } catch (error) {
+        console.error("DNS lookup error:", error)
+        displayError("DNS Lookup Error", "A network error occurred")
+      }
+    })
+  }
+
+  const speedForm = document.getElementById("speed-form")
+  if (speedForm) {
+    speedForm.addEventListener("submit", async (e) => {
+      e.preventDefault()
+
+      try {
+        const response = await fetch("https://project-vantage-backend-ih0i.onrender.com/api/speed-test", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+
+        const result = await response.json()
+
+        if (response.ok) {
+          displaySpeedResults(result)
+        } else {
+          displayError("Speed Test failed", result.message)
+        }
+      } catch (error) {
+        console.error("Speed test error:", error)
+        displayError("Speed Test Error", "A network error occurred")
+      }
+    })
+  }
+
   // Display ping results
   function displayPingResults(data) {
     const summary = document.getElementById("ping-results-summary")
@@ -199,6 +296,57 @@ document.addEventListener("DOMContentLoaded", () => {
   function displayTracerouteResults(data) {
     const results = document.getElementById("traceroute-results")
     results.textContent = data.raw || "No output"
+  }
+
+  function displayDnsResults(data) {
+    const results = document.getElementById("dns-results")
+
+    if (data.success) {
+      let html = `
+        <div class="status">
+          <span class="status-dot status-online"></span>
+          <strong>DNS Records Found</strong>
+        </div>
+      `
+
+      if (data.records) {
+        html += `<div><strong>Records:</strong> ${JSON.stringify(data.records)}</div>`
+      }
+
+      results.innerHTML = html
+    } else {
+      results.innerHTML = `
+        <div class="status">
+          <span class="status-dot status-offline"></span>
+          <strong>No DNS Records Found</strong>
+        </div>
+      `
+    }
+
+    results.style.display = "block"
+  }
+
+  function displaySpeedResults(data) {
+    const results = document.getElementById("speed-results")
+
+    if (data.success) {
+      results.innerHTML = `
+        <div class="status">
+          <span class="status-dot status-online"></span>
+          <strong>Speed Test Complete</strong>
+        </div>
+        <div>Download: ${data.download} Mbps | Upload: ${data.upload} Mbps | Ping: ${data.ping} ms</div>
+      `
+    } else {
+      results.innerHTML = `
+        <div class="status">
+          <span class="status-dot status-offline"></span>
+          <strong>Speed Test Failed</strong>
+        </div>
+      `
+    }
+
+    results.style.display = "block"
   }
 
   // Display error
