@@ -9,13 +9,26 @@ document.addEventListener("DOMContentLoaded", () => {
         method: "GET",
         credentials: "include",
       });
-      if (!response.ok) window.location.href = "login.html";
+      if (!response.ok) {
+        window.location.href = "login.html";
+        return; // Stop execution if not logged in
+      }
+      const result = await response.json();
+      if (result.logged_in && result.user && result.user.email) {
+        const userEmailSpan = document.getElementById("user-email");
+        if (userEmailSpan) {
+          userEmailSpan.textContent = result.user.email;
+        }
+      } else {
+        window.location.href = "login.html";
+      }
+
     } catch (error) {
       console.error("Auth check error:", error);
       window.location.href = "login.html";
     }
   };
-  // checkAuth(); // Uncomment this line to enforce login
+  checkAuth(); // Uncomment this line to enforce login
 
   // --- Logout Button ---
   const logoutBtn = document.getElementById("logout-btn");
