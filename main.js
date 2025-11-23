@@ -105,92 +105,56 @@ if (contactForm && contactMessageDiv) {
   contactForm.addEventListener("submit", submitContactForm);
 }
 
-// --- Dynamic Dashboard Link for Logged-In Users ---
-const checkSessionAndAddDashboardLink = async () => {
-  const API_BASE_URL = 'https://vantage-backend-api.onrender.com/api';
+// --- Dynamic UI based on Auth State ---
+const updateUIBasedOnAuthState = async () => {
   const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-  const currentAPIBaseUrl = isLocal ? 'http://127.0.0.1:5000/api' : API_BASE_URL;
+  const API_BASE_URL = isLocal ? 'http://127.0.0.1:5000/api' : 'https://vantage-backend-api.onrender.com/api';
+  
+  const navLinksContainer = document.getElementById("nav-links");
+  const launchConsoleBtn = document.querySelector('.hero-actions a.btn--primary');
 
   try {
-    const response = await fetch(`${currentAPIBaseUrl}/check_session`, {
+    const response = await fetch(`${API_BASE_URL}/check_session`, {
       method: "GET",
       credentials: "include",
     });
     const result = await response.json();
 
-    if (result.logged_in && !window.location.pathname.includes('dashboard.html')) {
-      if (navLinksContainer) {
-        const dashboardLink = document.createElement('a');
-        dashboardLink.href = "dashboard.html";
-        dashboardLink.textContent = "Dashboard";
-        // Insert before the logout button if it exists, otherwise at the end
-        const logoutBtn = document.getElementById("logout-btn");
-        if (logoutBtn) {
-            navLinksContainer.insertBefore(dashboardLink, logoutBtn.previousElementSibling);
-        } else {
-            navLinksContainer.appendChild(dashboardLink);
-        }
-        // Also remove the login link if present
-        const loginLink = navLinksContainer.querySelector('a[href="login.html"]');
-        if (loginLink) {
-            loginLink.remove();
-        }
-      }
+    // Clear any existing dynamic links to prevent duplication
+    const existingDashboardLink = navLinksContainer.querySelector('a[href="dashboard.html"]');
+    if (existingDashboardLink) existingDashboardLink.remove();
+
+    if (result.logged_in) {
+      // --- USER IS LOGGED IN ---
+      // Add Dashboard link to nav
+      const dashboardLink = document.createElement('a');
+      dashboardLink.href = "dashboard.html";
+      dashboardLink.textContent = "Dashboard";
+      navLinksContainer.appendChild(dashboardLink);
+
+      // Update Launch Console button
+      if (launchConsoleBtn) launchConsoleBtn.href = "dashboard.html";
+
     } else {
-        // If not logged in, ensure logout button is removed and login link is present
-        const navLinksContainer = document.getElementById("nav-links");
-        if (navLinksContainer) {
-            const logoutBtn = document.getElementById("logout-btn");
-            if (logoutBtn) {
-                logoutBtn.remove();
-            }
-            let loginLink = navLinksContainer.querySelector('a[href="login.html"]');
-            if (!loginLink) {
-                loginLink = document.createElement('a');
-                loginLink.href = "login.html";
-                loginLink.textContent = "Login";
-                navLinksContainer.appendChild(loginLink);
-            }
-        }
+      // --- USER IS LOGGED OUT ---
+      // Ensure no Dashboard link is present
+      const dashboardLink = navLinksContainer.querySelector('a[href="dashboard.html"]');
+      if (dashboardLink) dashboardLink.remove();
+
+      // Update Launch Console button
+      if (launchConsoleBtn) launchConsoleBtn.href = "login.html";
     }
   } catch (error) {
-    console.error("Error checking session:", error);
+    console.error("Error updating UI based on auth state:", error);
+    // Fallback to default logged-out state
+    if (launchConsoleBtn) launchConsoleBtn.href = "login.html";
   }
 };
 
-checkSessionAndAddDashboardLink();
-
-// --- Dynamic 'Launch Console' Button Link ---
-const updateLaunchConsoleLink = async () => {
-  const API_BASE_URL = 'https://vantage-backend-api.onrender.com/api';
-  const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-  const currentAPIBaseUrl = isLocal ? 'http://127.0.0.1:5000/api' : API_BASE_URL;
-  const launchConsoleBtn = document.querySelector('.hero-actions a.btn--primary');
-
-  if (launchConsoleBtn) {
-    try {
-      const response = await fetch(`${currentAPIBaseUrl}/check_session`, {
-        method: "GET",
-        credentials: "include",
-      });
-      const result = await response.json();
-
-      if (result.logged_in) {
-        launchConsoleBtn.href = "dashboard.html";
-      } else {
-        launchConsoleBtn.href = "login.html";
-      }
-    } catch (error) {
-      console.error("Error updating Launch Console link:", error);
-      // Fallback to login.html in case of API error
-      launchConsoleBtn.href = "login.html";
-    }
-  }
-};
-
-updateLaunchConsoleLink();
+document.addEventListener('DOMContentLoaded', updateUIBasedOnAuthState);
 
 if (window.gsap && window.ScrollTrigger) {
+
   gsap.registerPlugin(ScrollTrigger);
 
   gsap.utils.toArray(".scene").forEach((scene) => {
