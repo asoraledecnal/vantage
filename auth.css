@@ -9,8 +9,8 @@ body.auth-body {
   color: #f5f5f0;
   position: relative;
 
-  overflow-x: hidden;   /* ALLOW scroll */
-  overflow-y: auto;     /* ALLOW scroll */
+  overflow-x: hidden;  
+  overflow-y: auto; 
 }
 
 
@@ -21,19 +21,15 @@ body.auth-body {
   z-index: 0;
 }
 
-.auth-texture--noise {
-  background: url("assets/noise.png");
-  mix-blend-mode: screen;
-  opacity: 0.05;
-}
+
 
 .auth-texture--radial {
   background: radial-gradient(circle at 60% 40%, rgba(154, 215, 255, 0.2), transparent 60%);
 }
 
 .auth-shell {
-  min-height: 60vh;   /* FIX */
-  height: auto;        /* FIX */
+  min-height: 60vh;   
+  height: auto;        
   width: min(1200px, 100%);
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));

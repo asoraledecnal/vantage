@@ -17,13 +17,13 @@ services:
       # of the PostgreSQL database defined below.
       - key: DATABASE_URL
         fromDatabase:
-          name: vantage-db
+          name: vantage
           property: connectionString
 
 databases:
   # This defines a PostgreSQL database to be created and managed by Render.
   # The free plan is suitable for development and small projects.
-  - name: vantage-db
+  - name: vantage
     databaseName: vantage # You can name your database
     user: vantage_user     # You can name the user
     plan: free

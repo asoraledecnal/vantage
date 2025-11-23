@@ -68,7 +68,7 @@ const submitContactForm = async (event) => {
   };
 
   try {
-    const response = await fetch("https://project-vantage-backend-ih0i.onrender.com/api/contact", {
+    const response = await fetch("https://vantage-backend-api.onrender.com/api/contact", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
