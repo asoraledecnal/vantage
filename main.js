@@ -118,8 +118,7 @@ const checkSessionAndAddDashboardLink = async () => {
     });
     const result = await response.json();
 
-    if (result.logged_in) {
-      const navLinksContainer = document.getElementById("nav-links");
+    if (result.logged_in && !window.location.pathname.includes('dashboard.html')) {
       if (navLinksContainer) {
         const dashboardLink = document.createElement('a');
         dashboardLink.href = "dashboard.html";

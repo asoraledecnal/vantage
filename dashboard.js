@@ -31,12 +31,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- Clean up redundant Dashboard link ---
-  const redundantDashboardLink = document.querySelector('.nav__links a[href="dashboard.html"]');
-  if (redundantDashboardLink) {
-    redundantDashboardLink.remove();
-  }
-
   // --- Tab Navigation ---
   const tabs = document.querySelectorAll(".tab-button");
   const tabContents = document.querySelectorAll(".tab-content");

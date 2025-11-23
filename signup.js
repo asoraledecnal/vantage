@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Configuration ---
-  const isLocal = window.location.hostname === '122.0.0.1' || window.location.hostname === 'localhost';
+  const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
   const BACKEND_URL = isLocal ? "http://127.0.0.1:5000" : "https://vantage-backend-api.onrender.com" ;
  
   const signupForm = document.getElementById("signup-form")
