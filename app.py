@@ -53,7 +53,7 @@ CORS(app, resources={r"/api/*": {"origins": ["https://asoraledecnal.github.io", 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+app.config['SQLALCHEMY_DATABASE_URL'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -228,7 +228,6 @@ def get_speed_test():
     except Exception as e:
         return {'error': f"Speed test failed: {e}"}
 
-# --- Unified Gemini CLI Endpoint ---
 @app.route('/api/research', methods=['POST'])
 @login_required
 def domain_research():
