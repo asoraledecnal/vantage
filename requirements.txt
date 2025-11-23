@@ -8,3 +8,5 @@ requests
 python-whois
 dnspython
 speedtest-cli
+gunicorn
+
