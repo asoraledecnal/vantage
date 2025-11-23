@@ -276,9 +276,46 @@ ul {
 }
 
 .scene--media .scene__inner {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr; /* Default to single column for mobile */
   gap: var(--grid-gap);
+  align-items: center;
+}
+
+@media (min-width: 768px) { /* Adjust breakpoint as needed */
+  .scene--media .scene__inner {
+    grid-template-columns: repeat(2, 1fr); /* Two columns for desktop */
+  }
+  /* Specific rule for Chapter 1: text on left, media on right */
+  #origin .scene__inner {
+    grid-template-areas: "text media";
+    grid-template-columns: 2fr 1.1fr; /* Adjust ratio as needed, increased 1fr to 1.1fr */
+  }
+  #origin .chapter-body {
+    grid-area: text;
+  }
+  #origin .chapter-media {
+    grid-area: media;
+  }
+
+  /* Chapter 2 (signal) is already media left, text right. No explicit reordering needed if HTML is media first. */
+  /* If HTML is text first, media second for #signal, then use: */
+  /* #signal .scene__inner {
+       grid-template-areas: "media text";
+       grid-template-columns: 1fr 2fr;
+     }
+     #signal .chapter-body { grid-area: text; }
+     #signal .chapter-media { grid-area: media; }
+  */
+}
+
+.media-card .media-frame {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.media-card:hover .media-frame {
+  border-color: rgba(255, 157, 124, 0.5);
+  box-shadow: 0 0 25px rgba(255, 157, 124, 0.3);
 }
 
 .chapter-meta {
