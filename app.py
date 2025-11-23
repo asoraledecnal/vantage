@@ -11,6 +11,7 @@ import ipaddress
 import smtplib
 
 from email.mime.text import MIMEText
+import threading
 
 from functools import wraps
 from typing import Any, Optional
@@ -307,10 +308,11 @@ def check_session():
 def handle_contact():
     data = request.get_json()
 
-    if not data or not data.get("email") or not data.get("message") or not data.get("name"):
-        return jsonify({"message": "Name, email, and message are required."}), 400
+    if not data or not data.get("name") or not data.get("email") or not data.get("message"):
+        return jsonify({"success": False, "error": "Name, email, and message are required."}), 400
 
     try:
+        # Save feedback to the database first
         fb = Feedback(
             name=data["name"],
             email=data["email"],
@@ -320,17 +322,20 @@ def handle_contact():
         db.session.add(fb)
         db.session.commit()
 
-        # Attempt to send email, but don't fail the request if it fails
-        try:
-            send_feedback_email(data["name"], data["email"], data.get("subject"), data["message"])
-        except Exception as email_err:
-            print(f"Error sending feedback email: {email_err}")
+        # Start a background thread to send the email without blocking
+        thread = threading.Thread(
+            target=send_feedback_email,
+            args=(data["name"], data["email"], data.get("subject"), data["message"])
+        )
+        thread.start()
 
-        return jsonify({"message": "Your message has been received. Thank you!"}), 201
+        return jsonify({"success": True}), 202  # 202 Accepted: The request has been accepted for processing
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"message": f"Failed to save feedback due to an internal error: {e}"}), 500
+        # In a real app, you'd log this error more formally
+        print(f"Error in /api/contact: {e}")
+        return jsonify({"success": False, "error": "An internal error occurred."}), 500
 
 
 # ============================================================
