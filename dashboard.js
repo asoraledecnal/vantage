@@ -245,4 +245,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }, 5000);
   }
+
+  // --- GSAP Entry Animations ---
+  if (window.gsap) {
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+    tl.from(".hero-eyebrow", { opacity: 0, y: 30, duration: 0.8 })
+      .from(".hero-title", { opacity: 0, y: 40, duration: 1.0 }, "-=0.6")
+      .from(".hero-lede", { opacity: 0, y: 40, duration: 1.0 }, "-=0.8")
+      .from(".diagnostics-layout", { opacity: 0, y: 50, duration: 1.2 }, "-=0.8");
+  }
 });
