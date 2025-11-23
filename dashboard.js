@@ -1,208 +1,222 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Check if user is logged in
+  const API_BASE_URL = 'https://vantage-backend-api.onrender.com/api';
+
   const checkAuth = async () => {
     try {
-      const response = await fetch("https://project-vantage-backend-ih0i.onrender.com/api/check-auth", {
+      const response = await fetch(`${API_BASE_URL}/check_session`, {
         method: "GET",
         credentials: "include",
-      })
-
-      if (!response.ok) {
-        window.location.href = "login.html"
-      }
+      });
+      if (!response.ok) window.location.href = "login.html";
     } catch (error) {
-      console.error("Auth check error:", error)
-      window.location.href = "login.html"
+      console.error("Auth check error:", error);
+      window.location.href = "login.html";
     }
-  }
+  };
+  // checkAuth();
 
-  checkAuth()
-
-  // Logout functionality
-  const logoutBtn = document.getElementById("logout-btn")
+  const logoutBtn = document.getElementById("logout-btn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async (e) => {
-      e.preventDefault()
+      e.preventDefault();
       try {
-        await fetch("https://project-vantage-backend-ih0i.onrender.com/api/logout", {
-          method: "POST",
-          credentials: "include",
-        })
+        await fetch(`${API_BASE_URL}/logout`, { method: "POST", credentials: "include" });
       } catch (error) {
-        console.error("Logout error:", error)
+        console.error("Logout error:", error);
       }
-      window.location.href = "login.html"
-    })  
+      window.location.href = "login.html";
+    });
   }
 
-  // Tab switching
-  const tabLinks = document.querySelectorAll(".tab-link")
-  const tabContents = document.querySelectorAll(".tab-content")
+  const tabButtons = document.querySelectorAll(".tab-button");
+  const tabUnderline = document.querySelector(".tab-underline");
+  const tabContents = document.querySelectorAll(".tab-content");
 
-  tabLinks.forEach((link) => {
-    link.addEventListener("click", (e) => {
-      e.preventDefault()
+  const updateTabUnderline = (activeButton) => {
+    if (!activeButton) return;
+    tabUnderline.style.width = `${activeButton.offsetWidth}px`;
+    tabUnderline.style.left = `${activeButton.offsetLeft}px`;
+  };
 
-      // Remove active class from all tabs
-      tabLinks.forEach((tab) => tab.classList.remove("active"))
-      tabContents.forEach((content) => content.classList.remove("active"))
+  const activateTab = (tool) => {
+    tabButtons.forEach((btn) => btn.classList.remove("active"));
+    tabContents.forEach((content) => content.classList.remove("active"));
 
-      // Add active class to clicked tab
-      link.classList.add("active")
-      const tabId = link.getAttribute("data-tab")
-      document.getElementById(tabId).classList.add("active")
-    })
-  })
+    const activeButton = document.querySelector(`[data-tool="${tool}"]`);
+    if (activeButton) {
+      activeButton.classList.add("active");
+      updateTabUnderline(activeButton);
+    }
+    const activeContent = document.getElementById(`${tool}-tab`);
+    if (activeContent) activeContent.classList.add("active");
+  };
 
-  // Ping functionality
-  const pingForm = document.getElementById("ping-form")
-  if (pingForm) {
-    pingForm.addEventListener("submit", async (e) => {
-      e.preventDefault()
-      const host = document.getElementById("ping-host").value
+  tabButtons.forEach((button) => {
+    button.addEventListener("click", () => activateTab(button.dataset.tool));
+  });
+
+  if (tabButtons.length > 0) activateTab(tabButtons[0].dataset.tool);
+
+  const handleToolSubmit = async (tool, form, displayFunction) => {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const submitButton = form.querySelector('button[type="submit"]');
+      const originalButtonText = submitButton.innerHTML;
+      submitButton.innerHTML = '<span class="loader"></span>';
+      submitButton.disabled = true;
+      
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
 
       try {
-        const response = await fetch("https://project-vantage-backend-ih0i.onrender.com/api/ping", {
+        const response = await fetch(`${API_BASE_URL}/${tool}`, {
           method: "POST",
           credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ host }),
-        })
-
-        const result = await response.json()
-
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        const result = await response.json();
         if (response.ok) {
-          displayPingResults(result)
+          displayFunction(result);
         } else {
-          displayError("Ping failed", result.message)
+          displayError(result.error || result.message || "An unknown error occurred.");
         }
       } catch (error) {
-        console.error("Ping error:", error)
-        displayError("Ping Error", "A network error occurred")
+        console.error(`${tool} error:`, error);
+        displayError("A network error occurred. Please try again.");
+      } finally {
+        submitButton.innerHTML = originalButtonText;
+        submitButton.disabled = false;
       }
-    })
-  }
+    });
+  };
 
-  // Port scan functionality
-  const portScanForm = document.getElementById("port-scan-form")
-  if (portScanForm) {
-    portScanForm.addEventListener("submit", async (e) => {
-      e.preventDefault()
-      const host = document.getElementById("scan-host").value
-      const port = document.getElementById("scan-port").value
+  // TCP Port Check
+  const tcpPingForm = document.getElementById("tcp-ping-form");
+  if (tcpPingForm) handleToolSubmit("tcp_ping", tcpPingForm, displayTcpPingResults);
+
+  // Port Scan
+  const portScanForm = document.getElementById("port-scan-form");
+  if (portScanForm) handleToolSubmit("port_scan", portScanForm, displayPortScanResults);
+
+  // GeoIP Lookup
+  const geoipForm = document.getElementById("geoip-form");
+  if (geoipForm) handleToolSubmit("geoip", geoipForm, displayGeoIpResults);
+  
+  // DNS Lookup
+  const dnsForm = document.getElementById("dns-form");
+  if (dnsForm) handleToolSubmit("dns", dnsForm, displayDnsResults);
+
+  // Speed Test
+  const speedForm = document.getElementById("speed-form");
+  if (speedForm) {
+    speedForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const submitButton = speedForm.querySelector('button[type="submit"]');
+      const originalButtonText = submitButton.innerHTML;
+      submitButton.innerHTML = '<span class="loader"></span> Running...';
+      submitButton.disabled = true;
 
       try {
-        const response = await fetch("https://project-vantage-backend-ih0i.onrender.com/api/port-scan", {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ host, port }),
-        })
-
-        const result = await response.json()
-
+        const response = await fetch(`${API_BASE_URL}/speed-test`, { method: "POST", credentials: "include" });
+        const result = await response.json();
         if (response.ok) {
-          displayPortScanResults(result)
+          displaySpeedResults(result);
         } else {
-          displayError("Port Scan failed", result.message)
+          displayError(result.error || "Speed test failed.");
         }
       } catch (error) {
-        console.error("Port scan error:", error)
-        displayError("Port Scan Error", "A network error occurred")
+        console.error("Speed test error:", error);
+        displayError("A network error occurred during the speed test.");
+      } finally {
+        submitButton.innerHTML = originalButtonText;
+        submitButton.disabled = false;
       }
-    })
+    });
   }
 
-  // Traceroute functionality
-  const tracerouteForm = document.getElementById("traceroute-form")
-  if (tracerouteForm) {
-    tracerouteForm.addEventListener("submit", async (e) => {
-      e.preventDefault()
-      const host = document.getElementById("trace-host").value
-
-      try {
-        const response = await fetch("https://project-vantage-backend-ih0i.onrender.com/api/traceroute", {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ host }),
-        })
-
-        const result = await response.json()
-
-        if (response.ok) {
-          displayTracerouteResults(result)
-        } else {
-          displayError("Traceroute failed", result.message)
-        }
-      } catch (error) {
-        console.error("Traceroute error:", error)
-        displayError("Traceroute Error", "A network error occurred")
-      }
-    })
+  function displayTcpPingResults(data) {
+    const results = document.getElementById("tcp-ping-results");
+    const isReachable = data.status === "reachable";
+    results.innerHTML = `
+      <div class="status">
+        <span class="status-dot ${isReachable ? "status-online" : "status-offline"}"></span>
+        <strong>Host ${data.host}:${data.port} is ${data.status}</strong>
+      </div>
+      ${isReachable ? `<div>Connection Time: ${data.time}</div>` : ''}
+    `;
+    results.style.display = "block";
   }
 
-  // Display ping results
-  function displayPingResults(data) {
-    const summary = document.getElementById("ping-results-summary")
-    const raw = document.getElementById("ping-results-raw")
-    const details = document.getElementById("ping-details")
+  function displayPortScanResults(data) {
+    const results = document.getElementById("port-scan-results");
+    results.innerHTML = `
+      <div class="status">
+        <span class="status-dot ${data.status === "open" ? "status-open" : "status-closed"}"></span>
+        <strong>Port ${data.port} on ${data.host} is ${data.status}</strong>
+      </div>
+    `;
+    results.style.display = "block";
+  }
 
-    if (data.success) {
-      summary.innerHTML = `
+  function displayGeoIpResults(data) {
+    const results = document.getElementById("geoip-results");
+    if (data.error) {
+      results.innerHTML = `<div class="status"><span class="status-dot status-offline"></span><strong>Error:</strong> ${data.error}</div>`;
+    } else {
+      results.innerHTML = `
         <div class="status">
           <span class="status-dot status-online"></span>
-          <strong>Host is reachable</strong>
+          <strong>Geolocation for ${data.host} (${data.ip_address})</strong>
         </div>
-        <div>Minimum: ${data.min}ms | Average: ${data.avg}ms | Maximum: ${data.max}ms</div>
-      `
-    } else {
-      summary.innerHTML = `
-        <div class="status">
-          <span class="status-dot status-offline"></span>
-          <strong>Host is unreachable</strong>
-        </div>
-      `
+        <div><strong>Country:</strong> ${data.country || 'N/A'}</div>
+        <div><strong>City:</strong> ${data.city || 'N/A'}, ${data.region || 'N/A'}</div>
+        <div><strong>ISP:</strong> ${data.isp || 'N/A'}</div>
+        <div><strong>Organization:</strong> ${data.organization || 'N/A'}</div>
+      `;
     }
-
-    raw.textContent = data.raw || "No output"
-    summary.style.display = "block"
-    details.style.display = "block"
+    results.style.display = "block";
   }
 
-  // Display port scan results
-  function displayPortScanResults(data) {
-    const results = document.getElementById("port-scan-results")
+  function displayDnsResults(data) {
+    const results = document.getElementById("dns-results");
+    if (data.error) {
+      results.innerHTML = `<div class="status"><span class="status-dot status-offline"></span> <strong>Error:</strong> ${data.error}</div>`;
+    } else if (data.records) {
+      let html = '<div class="status"><span class="status-dot status-online"></span> <strong>DNS Records Found</strong></div>';
+      for (const [key, value] of Object.entries(data.records)) {
+        if (value.length > 0) {
+          html += `<div><strong>${key}:</strong> ${Array.isArray(value) ? value.join(', ') : value}</div>`;
+        }
+      }
+      results.innerHTML = html;
+    }
+    results.style.display = "block";
+  }
 
-    let html = `
+  function displaySpeedResults(data) {
+    const results = document.getElementById("speed-results");
+    results.innerHTML = `
       <div class="status">
-        <span class="status-dot ${data.open ? "status-open" : "status-closed"}"></span>
-        <strong>Port ${data.port} is ${data.open ? "OPEN" : "CLOSED"}</strong>
+        <span class="status-dot status-online"></span>
+        <strong>Speed Test Complete</strong>
       </div>
-    `
-
-    if (data.service) {
-      html += `<div>Service: ${data.service}</div>`
-    }
-
-    results.innerHTML = html
-    results.style.display = "block"
+      <div>Download: ${data.download} Mbps</div>
+      <div>Upload: ${data.upload} Mbps</div>
+      <div>Ping: ${data.ping} ms</div>
+    `;
+    results.style.display = "block";
   }
 
-  // Display traceroute results
-  function displayTracerouteResults(data) {
-    const results = document.getElementById("traceroute-results")
-    results.textContent = data.raw || "No output"
+  function displayError(message) {
+    const errorContainer = document.getElementById("error-container");
+    const errorElement = document.createElement("div");
+    errorElement.className = "error-message";
+    errorElement.innerHTML = `<strong>Error:</strong> ${message}`;
+    errorContainer.appendChild(errorElement);
+    setTimeout(() => {
+      errorElement.style.opacity = '0';
+      setTimeout(() => errorElement.remove(), 500);
+    }, 5000);
   }
-
-  // Display error
-  function displayError(title, message) {
-    alert(`${title}: ${message}`)
-  }
-})
+});
