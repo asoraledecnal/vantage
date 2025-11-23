@@ -47,6 +47,17 @@ CREATE TABLE incidents (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Table for storing contact form submissions, related to /api/contact
+CREATE TABLE feedback (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    subject TEXT,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+
 -- Create indexes for foreign keys and frequently queried columns
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_documents_file_path ON documents(file_path);
