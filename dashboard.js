@@ -17,11 +17,6 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   // checkAuth(); // Uncomment this line to enforce login
 
-  const homeLink = document.querySelector('.nav__links a[href="index.html"]');
-  if (homeLink) {
-    homeLink.href = "#"; // Keep user on the dashboard
-  }
-
   // --- Logout Button ---
   const logoutBtn = document.getElementById("logout-btn");
   if (logoutBtn) {
@@ -34,6 +29,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       window.location.href = "login.html";
     });
+  }
+
+  // --- Clean up redundant Dashboard link ---
+  const redundantDashboardLink = document.querySelector('.nav__links a[href="dashboard.html"]');
+  if (redundantDashboardLink) {
+    redundantDashboardLink.remove();
   }
 
   // --- Tab Navigation ---
