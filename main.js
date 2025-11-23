@@ -126,12 +126,6 @@ const updateUIBasedOnAuthState = async () => {
 
     if (result.logged_in) {
       // --- USER IS LOGGED IN ---
-      // Add Dashboard link to nav
-      const dashboardLink = document.createElement('a');
-      dashboardLink.href = "dashboard.html";
-      dashboardLink.textContent = "Dashboard";
-      navLinksContainer.appendChild(dashboardLink);
-
       // Update Launch Console button
       if (launchConsoleBtn) launchConsoleBtn.href = "dashboard.html";
 
