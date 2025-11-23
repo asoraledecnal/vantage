@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const API_BASE_URL = 'https://vantage-backend-api.onrender.com/api';
+  const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+  const API_BASE_URL = isLocal ? 'http://127.0.0.1:5000/api' : 'https://vantage-backend-api.onrender.com/api';
 
   // --- Authentication Check ---
   const checkAuth = async () => {
@@ -15,6 +16,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
   // checkAuth(); // Uncomment this line to enforce login
+
+  const homeLink = document.querySelector('.nav__links a[href="index.html"]');
+  if (homeLink) {
+    homeLink.href = "#"; // Keep user on the dashboard
+  }
 
   // --- Logout Button ---
   const logoutBtn = document.getElementById("logout-btn");
@@ -70,7 +76,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
-    const endpoint = form.id.replace('-form', '').replace('-', '_');
+    const tool = form.id.replace('-form', '');
+    const endpoint = tool.replace('-', '_'); // e.g., port-scan -> port_scan
 
     try {
       const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
@@ -81,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const result = await response.json();
       if (response.ok) {
-        displayResults(result, resultsContainer);
+        displayResults(result, resultsContainer, tool);
       } else {
         displayError(result.error || result.message || "An unknown error occurred.");
       }
@@ -114,25 +121,119 @@ document.addEventListener("DOMContentLoaded", () => {
       }
   });
 
-  // --- Display Functions ---
-  function displayResults(data, container) {
+  // --- Results Display Router ---
+  function displayResults(data, container, tool) {
     container.innerHTML = ''; // Clear previous results
-    const list = document.createElement('ul');
-
-    for (const [key, value] of Object.entries(data)) {
-        const listItem = document.createElement('li');
-        let displayValue = '';
-        if (typeof value === 'object' && value !== null) {
-            // Prettify objects and arrays
-            displayValue = `<pre>${JSON.stringify(value, null, 2)}</pre>`;
-        } else {
-            displayValue = value;
-        }
-        listItem.innerHTML = `<strong>${key.replace(/_/g, ' ')}:</strong> ${displayValue}`;
-        list.appendChild(listItem);
+    
+    switch (tool) {
+        case 'whois':
+            container.innerHTML = renderWhois(data);
+            break;
+        case 'dns':
+            container.innerHTML = renderDns(data);
+            break;
+        case 'geoip':
+            container.innerHTML = renderGeoIp(data);
+            break;
+        case 'port-scan':
+            container.innerHTML = renderPortScan(data);
+            break;
+        case 'speed':
+            container.innerHTML = renderSpeedTest(data);
+            break;
+        default:
+            container.innerHTML = '<p>Unsupported tool type.</p>';
     }
-    container.appendChild(list);
+    
     container.style.display = "block";
+  }
+
+  // --- Specific Result Renderers ---
+  function renderWhois(data) {
+      const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
+      return `
+        <div class="result-card whois-card">
+            <div class="result-header">Domain Information</div>
+            <div class="result-item"><strong>Domain:</strong> <span>${data.domain_name || 'N/A'}</span></div>
+            <div class="result-item"><strong>Registrar:</strong> <span>${data.registrar || 'N/A'}</span></div>
+            <div class="result-item"><strong>Creation Date:</strong> <span>${formatDate(data.creation_date)}</span></div>
+            <div class="result-item"><strong>Expiration Date:</strong> <span>${formatDate(data.expiration_date)}</span></div>
+            <div class="result-item"><strong>Name Servers:</strong> <div class="pills-container">${(data.name_servers || []).map(ns => `<span class="pill">${ns}</span>`).join('')}</div></div>
+        </div>
+      `;
+  }
+
+  function renderDns(data) {
+      let content = '<div class="result-card dns-card"><div class="result-header">DNS Records</div>';
+      const recordTypes = ['A', 'AAAA', 'MX', 'CNAME', 'TXT'];
+      recordTypes.forEach(type => {
+          if (data[type] && !data[type].error) {
+              content += `
+                <div class="dns-record-group">
+                    <h4>${type} Records</h4>
+                    <div class="pills-container">${data[type].map(rec => `<span class="pill pill-dns">${rec.replace(/"/g, '')}</span>`).join('')}</div>
+                </div>
+              `;
+          }
+      });
+      content += '</div>';
+      return content;
+  }
+
+  function renderGeoIp(data) {
+      if (data.status !== 'success') {
+          return `<div class="result-card geo-card"><div class="result-item"><strong>Error:</strong> <span>${data.message || 'Could not locate IP.'}</span></div></div>`;
+      }
+      const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${data.lon-0.5},${data.lat-0.5},${data.lon+0.5},${data.lat+0.5}&layer=mapnik&marker=${data.lat},${data.lon}`;
+      return `
+        <div class="result-card geo-card">
+            <div class="geo-main">
+                <div class="geo-info">
+                    <div class="result-header">IP Geolocation</div>
+                    <div class="result-item"><strong>IP Address:</strong> <span>${data.query}</span></div>
+                    <div class="result-item"><strong>Location:</strong> <span><img src="https://flagcdn.com/16x12/${data.countryCode.toLowerCase()}.png" alt="${data.country} flag" class="country-flag"> ${data.city}, ${data.country}</span></div>
+                    <div class="result-item"><strong>ISP:</strong> <span>${data.isp}</span></div>
+                </div>
+                <div class="geo-map">
+                    <iframe width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="${mapUrl}"></iframe>
+                </div>
+            </div>
+        </div>
+      `;
+  }
+
+  function renderPortScan(data) {
+      const statusClass = data.status === 'open' ? 'status-open' : 'status-closed';
+      const icon = data.status === 'open' ? '✔️' : '❌';
+      return `
+        <div class="result-card port-scan-card">
+            <div class="port-status ${statusClass}">
+                <span class="port-status-icon">${icon}</span>
+                <div class="port-status-text">
+                    Port ${data.port} is <strong>${data.status.toUpperCase()}</strong>
+                </div>
+            </div>
+        </div>
+      `;
+  }
+
+  function renderSpeedTest(data) {
+      return `
+        <div class="result-card speed-test-card">
+            <div class="speed-metric">
+                <div class="speed-label">Download</div>
+                <div class="speed-value">${data.download}</div>
+            </div>
+            <div class="speed-metric">
+                <div class="speed-label">Upload</div>
+                <div class="speed-value">${data.upload}</div>
+            </div>
+            <div class="speed-metric">
+                <div class="speed-label">Ping</div>
+                <div class="speed-value">${data.ping}</div>
+            </div>
+        </div>
+      `;
   }
 
   function displayError(message) {

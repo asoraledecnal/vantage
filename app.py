@@ -47,7 +47,7 @@ if not app.secret_key:
     raise ValueError("FATAL: SECRET_KEY environment variable is not set.")
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-CORS(app, resources={r"/api/*": {"origins": ["https://asoraledecnal.github.io", "http://127.0.0.1:5000", "http://127.0.0.1:8080"]}}, supports_credentials=True)
+CORS(app, resources={r"/api/*": {"origins": ["https://asoraledecnal.github.io", "http://127.0.0.1:5000", "http://127.0.0.1:8080", "http://127.0.0.1:5500"]}}, supports_credentials=True)
 
 # --- Database Configuration ---
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
@@ -162,6 +162,7 @@ def get_speed_test():
 @app.route('/api/signup', methods=['POST'])
 @limiter.limit("5 per minute")
 def signup():
+    session.clear()
     data = request.get_json()
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({"message": "Email and password are required!"}), 400
@@ -240,16 +241,7 @@ def whois_route():
         return jsonify({"error": "Invalid or malicious host provided"}), 400
     return jsonify(get_whois_data(host))
 
-@app.route('/api/dns_lookup', methods=['POST'])
-@login_required
-def dns_lookup_route():
-    data = request.get_json()
-    host = data.get('host')
-    if not is_valid_host(host):
-        return jsonify({"error": "Invalid or malicious host provided"}), 400
-    return jsonify(get_dns_records(host))
-
-@app.route('/api/ip_geolocation', methods=['POST'])
+@app.route('/api/geoip', methods=['POST'])
 @login_required
 def ip_geolocation_route():
     data = request.get_json()
@@ -257,6 +249,15 @@ def ip_geolocation_route():
     if not is_valid_host(host):
         return jsonify({"error": "Invalid or malicious host provided"}), 400
     return jsonify(get_ip_geolocation(host))
+
+@app.route('/api/dns', methods=['POST'])
+@login_required
+def dns_lookup_route():
+    data = request.get_json()
+    host = data.get('host')
+    if not is_valid_host(host):
+        return jsonify({"error": "Invalid or malicious host provided"}), 400
+    return jsonify(get_dns_records(host))
 
 @app.route('/api/port_scan', methods=['POST'])
 @login_required
@@ -268,11 +269,10 @@ def port_scan_route():
         return jsonify({"error": "Invalid or malicious host provided"}), 400
     return jsonify(scan_port(host, int(port)))
 
-@app.route('/api/speed_test', methods=['POST'])
+@app.route('/api/speed', methods=['POST'])
 @login_required
 def speed_test_route():
     return jsonify(get_speed_test())
 
 if __name__ == '__main__':
-    app.config['SESSION_COOKIE_SECURE'] = False
     app.run(debug=True)

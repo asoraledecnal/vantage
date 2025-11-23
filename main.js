@@ -68,7 +68,10 @@ const submitContactForm = async (event) => {
   };
 
   try {
-    const response = await fetch("https://vantage-backend-api.onrender.com/api/contact", {
+    const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+    const API_BASE_URL = isLocal ? 'http://127.0.0.1:5000/api' : "https://vantage-backend-api.onrender.com/api";
+
+    const response = await fetch(`${API_BASE_URL}/contact`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -101,6 +104,92 @@ const submitContactForm = async (event) => {
 if (contactForm && contactMessageDiv) {
   contactForm.addEventListener("submit", submitContactForm);
 }
+
+// --- Dynamic Dashboard Link for Logged-In Users ---
+const checkSessionAndAddDashboardLink = async () => {
+  const API_BASE_URL = 'https://vantage-backend-api.onrender.com/api';
+  const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+  const currentAPIBaseUrl = isLocal ? 'http://127.0.0.1:5000/api' : API_BASE_URL;
+
+  try {
+    const response = await fetch(`${currentAPIBaseUrl}/check_session`, {
+      method: "GET",
+      credentials: "include",
+    });
+    const result = await response.json();
+
+    if (result.logged_in) {
+      const navLinksContainer = document.getElementById("nav-links");
+      if (navLinksContainer) {
+        const dashboardLink = document.createElement('a');
+        dashboardLink.href = "dashboard.html";
+        dashboardLink.textContent = "Dashboard";
+        // Insert before the logout button if it exists, otherwise at the end
+        const logoutBtn = document.getElementById("logout-btn");
+        if (logoutBtn) {
+            navLinksContainer.insertBefore(dashboardLink, logoutBtn.previousElementSibling);
+        } else {
+            navLinksContainer.appendChild(dashboardLink);
+        }
+        // Also remove the login link if present
+        const loginLink = navLinksContainer.querySelector('a[href="login.html"]');
+        if (loginLink) {
+            loginLink.remove();
+        }
+      }
+    } else {
+        // If not logged in, ensure logout button is removed and login link is present
+        const navLinksContainer = document.getElementById("nav-links");
+        if (navLinksContainer) {
+            const logoutBtn = document.getElementById("logout-btn");
+            if (logoutBtn) {
+                logoutBtn.remove();
+            }
+            let loginLink = navLinksContainer.querySelector('a[href="login.html"]');
+            if (!loginLink) {
+                loginLink = document.createElement('a');
+                loginLink.href = "login.html";
+                loginLink.textContent = "Login";
+                navLinksContainer.appendChild(loginLink);
+            }
+        }
+    }
+  } catch (error) {
+    console.error("Error checking session:", error);
+  }
+};
+
+checkSessionAndAddDashboardLink();
+
+// --- Dynamic 'Launch Console' Button Link ---
+const updateLaunchConsoleLink = async () => {
+  const API_BASE_URL = 'https://vantage-backend-api.onrender.com/api';
+  const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+  const currentAPIBaseUrl = isLocal ? 'http://127.0.0.1:5000/api' : API_BASE_URL;
+  const launchConsoleBtn = document.querySelector('.hero-actions a.btn--primary');
+
+  if (launchConsoleBtn) {
+    try {
+      const response = await fetch(`${currentAPIBaseUrl}/check_session`, {
+        method: "GET",
+        credentials: "include",
+      });
+      const result = await response.json();
+
+      if (result.logged_in) {
+        launchConsoleBtn.href = "dashboard.html";
+      } else {
+        launchConsoleBtn.href = "login.html";
+      }
+    } catch (error) {
+      console.error("Error updating Launch Console link:", error);
+      // Fallback to login.html in case of API error
+      launchConsoleBtn.href = "login.html";
+    }
+  }
+};
+
+updateLaunchConsoleLink();
 
 if (window.gsap && window.ScrollTrigger) {
   gsap.registerPlugin(ScrollTrigger);
