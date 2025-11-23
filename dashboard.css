@@ -613,7 +613,7 @@ header .logo img {
   background: var(--bg-panel);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
-  padding: 40px;
+  padding: 30px;
   backdrop-filter: blur(12px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   margin-top: -35px;
@@ -622,9 +622,42 @@ header .logo img {
   text-align: left;
 }
 
+.widget p {
+  margin-bottom: 15px;
+}
+
+.widget form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 17px;
+  margin-bottom: 24px;
+}
+
+.widget form input[type="text"],
+.widget form input[type="number"] {
+    /* Set a specific maximum width for the input box */
+    max-height: 50px;
+    /* Optional: Center the input box if it's smaller than the container */
+    margin-left: auto; 
+    margin-right: auto;
+    /* This ensures it still takes up the full width on small screens
+       but stops growing at 400px on larger screens. */
+    height: 44px; 
+    box-sizing: border-box; /* IMPORTANT: Makes padding/border included in width */
+}
+
 .widget:hover {
   border-color: rgba(255, 216, 137, 0.3);
   box-shadow: 0 12px 40px rgba(255, 216, 137, 0.15);
+}
+
+.widget .form .input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 17px;
+  margin-bottom: 24px;
 }
 
 .widget h3 {
@@ -643,12 +676,6 @@ header .logo img {
   font-size: 24px;
 }
 
-.widget form {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-}
 
 /* FIX 2: Centering the Start Test button */
 #speed-form {
