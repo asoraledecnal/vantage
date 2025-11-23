@@ -64,6 +64,13 @@ class User(db.Model):
     email = db.Column(db.Text, unique=True, nullable=False)
     password_hash = db.Column(db.Text, nullable=False)
 
+    def __init__(self, email: str, password_hash: str, id: uuid.UUID | None = None):
+        # explicit init so static analyzers know the constructor params
+        if id is not None:
+            self.id = id
+        self.email = email
+        self.password_hash = password_hash
+
 class Feedback(db.Model):
     __tablename__ = 'feedback'
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -72,6 +79,15 @@ class Feedback(db.Model):
     subject = db.Column(db.Text)
     message = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.TIMESTAMP(timezone=True), server_default=db.func.now())
+
+    def __init__(self, name: str, email: str, message: str, subject: str | None = None, id: uuid.UUID | None = None):
+        # explicit init to satisfy static typing / language servers
+        if id is not None:
+            self.id = id
+        self.name = name
+        self.email = email
+        self.subject = subject
+        self.message = message
 
 # --- Decorators ---
 def login_required(f):
