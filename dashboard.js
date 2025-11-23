@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const API_BASE_URL = 'https://vantage-backend-api.onrender.com/api';
 
+  // --- Authentication Check ---
   const checkAuth = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/check_session`, {
@@ -13,8 +14,9 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = "login.html";
     }
   };
-  // checkAuth();
+  // checkAuth(); // Uncomment this line to enforce login
 
+  // --- Logout Button ---
   const logoutBtn = document.getElementById("logout-btn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async (e) => {
@@ -28,184 +30,109 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const tabButtons = document.querySelectorAll(".tab-button");
-  const tabUnderline = document.querySelector(".tab-underline");
+  // --- Tab Navigation ---
+  const tabs = document.querySelectorAll(".tab-button");
   const tabContents = document.querySelectorAll(".tab-content");
+  const tabUnderline = document.querySelector(".tab-underline");
 
-  const updateTabUnderline = (activeButton) => {
-    if (!activeButton) return;
-    tabUnderline.style.width = `${activeButton.offsetWidth}px`;
-    tabUnderline.style.left = `${activeButton.offsetLeft}px`;
+  const setActiveTab = (tab) => {
+    tabs.forEach(t => t.classList.remove("active"));
+    tabContents.forEach(c => c.classList.remove("active"));
+    
+    tab.classList.add("active");
+    const tool = tab.dataset.tool;
+    document.getElementById(`${tool}-tab`).classList.add("active");
+
+    // Move underline
+    const tabRect = tab.getBoundingClientRect();
+    const containerRect = tab.parentElement.getBoundingClientRect();
+    tabUnderline.style.left = `${tabRect.left - containerRect.left}px`;
+    tabUnderline.style.width = `${tabRect.width}px`;
   };
 
-  const activateTab = (tool) => {
-    tabButtons.forEach((btn) => btn.classList.remove("active"));
-    tabContents.forEach((content) => content.classList.remove("active"));
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => setActiveTab(tab));
+  });
+  // Initialize underline position
+  if (tabs.length > 0) {
+    setActiveTab(tabs[0]);
+  }
 
-    const activeButton = document.querySelector(`[data-tool="${tool}"]`);
-    if (activeButton) {
-      activeButton.classList.add("active");
-      updateTabUnderline(activeButton);
+  // --- Generic Form Handler ---
+  const handleFormSubmit = async (form, resultsContainer) => {
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton.innerHTML;
+    submitButton.innerHTML = '<span class="loader"></span>';
+    submitButton.disabled = true;
+
+    resultsContainer.innerHTML = '';
+    resultsContainer.style.display = 'none';
+
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    const endpoint = form.id.replace('-form', '').replace('-', '_');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        displayResults(result, resultsContainer);
+      } else {
+        displayError(result.error || result.message || "An unknown error occurred.");
+      }
+    } catch (error) {
+      console.error(`Error with ${endpoint}:`, error);
+      displayError("A network error occurred. Please try again.");
+    } finally {
+      submitButton.innerHTML = originalButtonText;
+      submitButton.disabled = false;
     }
-    const activeContent = document.getElementById(`${tool}-tab`);
-    if (activeContent) activeContent.classList.add("active");
   };
 
-  tabButtons.forEach((button) => {
-    button.addEventListener("click", () => activateTab(button.dataset.tool));
+  // --- Attach Form Handlers ---
+  const forms = [
+      { id: 'whois-form', resultsId: 'whois-results' },
+      { id: 'port-scan-form', resultsId: 'port-scan-results' },
+      { id: 'geoip-form', resultsId: 'geoip-results' },
+      { id: 'dns-form', resultsId: 'dns-results' },
+      { id: 'speed-form', resultsId: 'speed-results' },
+  ];
+
+  forms.forEach(({ id, resultsId }) => {
+      const form = document.getElementById(id);
+      const resultsContainer = document.getElementById(resultsId);
+      if (form && resultsContainer) {
+          form.addEventListener('submit', (e) => {
+              e.preventDefault();
+              handleFormSubmit(form, resultsContainer);
+          });
+      }
   });
 
-  if (tabButtons.length > 0) activateTab(tabButtons[0].dataset.tool);
+  // --- Display Functions ---
+  function displayResults(data, container) {
+    container.innerHTML = ''; // Clear previous results
+    const list = document.createElement('ul');
 
-  const handleToolSubmit = async (tool, form, displayFunction) => {
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const submitButton = form.querySelector('button[type="submit"]');
-      const originalButtonText = submitButton.innerHTML;
-      submitButton.innerHTML = '<span class="loader"></span>';
-      submitButton.disabled = true;
-      
-      const formData = new FormData(form);
-      const data = Object.fromEntries(formData.entries());
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/${tool}`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-        const result = await response.json();
-        if (response.ok) {
-          displayFunction(result);
+    for (const [key, value] of Object.entries(data)) {
+        const listItem = document.createElement('li');
+        let displayValue = '';
+        if (typeof value === 'object' && value !== null) {
+            // Prettify objects and arrays
+            displayValue = `<pre>${JSON.stringify(value, null, 2)}</pre>`;
         } else {
-          displayError(result.error || result.message || "An unknown error occurred.");
+            displayValue = value;
         }
-      } catch (error) {
-        console.error(`${tool} error:`, error);
-        displayError("A network error occurred. Please try again.");
-      } finally {
-        submitButton.innerHTML = originalButtonText;
-        submitButton.disabled = false;
-      }
-    });
-  };
-
-  // TCP Port Check
-  const tcpPingForm = document.getElementById("tcp-ping-form");
-  if (tcpPingForm) handleToolSubmit("tcp_ping", tcpPingForm, displayTcpPingResults);
-
-  // Port Scan
-  const portScanForm = document.getElementById("port-scan-form");
-  if (portScanForm) handleToolSubmit("port_scan", portScanForm, displayPortScanResults);
-
-  // GeoIP Lookup
-  const geoipForm = document.getElementById("geoip-form");
-  if (geoipForm) handleToolSubmit("geoip", geoipForm, displayGeoIpResults);
-  
-  // DNS Lookup
-  const dnsForm = document.getElementById("dns-form");
-  if (dnsForm) handleToolSubmit("dns", dnsForm, displayDnsResults);
-
-  // Speed Test
-  const speedForm = document.getElementById("speed-form");
-  if (speedForm) {
-    speedForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const submitButton = speedForm.querySelector('button[type="submit"]');
-      const originalButtonText = submitButton.innerHTML;
-      submitButton.innerHTML = '<span class="loader"></span> Running...';
-      submitButton.disabled = true;
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/speed-test`, { method: "POST", credentials: "include" });
-        const result = await response.json();
-        if (response.ok) {
-          displaySpeedResults(result);
-        } else {
-          displayError(result.error || "Speed test failed.");
-        }
-      } catch (error) {
-        console.error("Speed test error:", error);
-        displayError("A network error occurred during the speed test.");
-      } finally {
-        submitButton.innerHTML = originalButtonText;
-        submitButton.disabled = false;
-      }
-    });
-  }
-
-  function displayTcpPingResults(data) {
-    const results = document.getElementById("tcp-ping-results");
-    const isReachable = data.status === "reachable";
-    results.innerHTML = `
-      <div class="status">
-        <span class="status-dot ${isReachable ? "status-online" : "status-offline"}"></span>
-        <strong>Host ${data.host}:${data.port} is ${data.status}</strong>
-      </div>
-      ${isReachable ? `<div>Connection Time: ${data.time}</div>` : ''}
-    `;
-    results.style.display = "block";
-  }
-
-  function displayPortScanResults(data) {
-    const results = document.getElementById("port-scan-results");
-    results.innerHTML = `
-      <div class="status">
-        <span class="status-dot ${data.status === "open" ? "status-open" : "status-closed"}"></span>
-        <strong>Port ${data.port} on ${data.host} is ${data.status}</strong>
-      </div>
-    `;
-    results.style.display = "block";
-  }
-
-  function displayGeoIpResults(data) {
-    const results = document.getElementById("geoip-results");
-    if (data.error) {
-      results.innerHTML = `<div class="status"><span class="status-dot status-offline"></span><strong>Error:</strong> ${data.error}</div>`;
-    } else {
-      results.innerHTML = `
-        <div class="status">
-          <span class="status-dot status-online"></span>
-          <strong>Geolocation for ${data.host} (${data.ip_address})</strong>
-        </div>
-        <div><strong>Country:</strong> ${data.country || 'N/A'}</div>
-        <div><strong>City:</strong> ${data.city || 'N/A'}, ${data.region || 'N/A'}</div>
-        <div><strong>ISP:</strong> ${data.isp || 'N/A'}</div>
-        <div><strong>Organization:</strong> ${data.organization || 'N/A'}</div>
-      `;
+        listItem.innerHTML = `<strong>${key.replace(/_/g, ' ')}:</strong> ${displayValue}`;
+        list.appendChild(listItem);
     }
-    results.style.display = "block";
-  }
-
-  function displayDnsResults(data) {
-    const results = document.getElementById("dns-results");
-    if (data.error) {
-      results.innerHTML = `<div class="status"><span class="status-dot status-offline"></span> <strong>Error:</strong> ${data.error}</div>`;
-    } else if (data.records) {
-      let html = '<div class="status"><span class="status-dot status-online"></span> <strong>DNS Records Found</strong></div>';
-      for (const [key, value] of Object.entries(data.records)) {
-        if (value.length > 0) {
-          html += `<div><strong>${key}:</strong> ${Array.isArray(value) ? value.join(', ') : value}</div>`;
-        }
-      }
-      results.innerHTML = html;
-    }
-    results.style.display = "block";
-  }
-
-  function displaySpeedResults(data) {
-    const results = document.getElementById("speed-results");
-    results.innerHTML = `
-      <div class="status">
-        <span class="status-dot status-online"></span>
-        <strong>Speed Test Complete</strong>
-      </div>
-      <div>Download: ${data.download} Mbps</div>
-      <div>Upload: ${data.upload} Mbps</div>
-      <div>Ping: ${data.ping} ms</div>
-    `;
-    results.style.display = "block";
+    container.appendChild(list);
+    container.style.display = "block";
   }
 
   function displayError(message) {
@@ -213,10 +140,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const errorElement = document.createElement("div");
     errorElement.className = "error-message";
     errorElement.innerHTML = `<strong>Error:</strong> ${message}`;
+    errorContainer.innerHTML = ''; // Clear previous errors
     errorContainer.appendChild(errorElement);
     setTimeout(() => {
-      errorElement.style.opacity = '0';
-      setTimeout(() => errorElement.remove(), 500);
+      if (errorElement) {
+        errorElement.style.opacity = '0';
+        setTimeout(() => errorElement.remove(), 500);
+      }
     }, 5000);
   }
 });

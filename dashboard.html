@@ -48,13 +48,13 @@
             <div class="diagnostics-panel">
                 <div class="tabs-wrapper">
                     <div class="tabs-container">
-                        <button class="tab-button active" data-tool="tcp_ping">
-                            <span class="tab-icon">🔌</span>
-                            <span class="tab-label">TCP Port Check</span>
+                        <button class="tab-button active" data-tool="whois">
+                            <span class="tab-icon">👤</span>
+                            <span class="tab-label">WHOIS</span>
                         </button>
                         <button class="tab-button" data-tool="port_scan">
                             <span class="tab-icon">🔍</span>
-                            <span class="tab-label">Single Port Scan</span>
+                            <span class="tab-label">Port Scan</span>
                         </button>
                         <button class="tab-button" data-tool="geoip">
                             <span class="tab-icon">🌍</span>
@@ -73,17 +73,16 @@
                 </div>
 
                 <div class="tab-content-wrapper">
-                    <!-- TCP Port Check (formerly Ping) -->
-                    <div id="tcp_ping-tab" class="tab-content active">
+                    <!-- WHOIS -->
+                    <div id="whois-tab" class="tab-content active">
                         <div class="widget">
-                            <h3><span class="icon">🔌</span>TCP Port Check</h3>
-                            <p class="widget-desc">Checks if a port on a host is open and measures connection time.</p>
-                            <form id="tcp-ping-form">
-                                <input type="text" name="host" placeholder="Enter host or IP (e.g., google.com)" required>
-                                <input type="number" name="port" placeholder="Port (e.g., 443)" value="443" required>
-                                <button type="submit">Check Port</button>
+                            <h3><span class="icon">👤</span>WHOIS Lookup</h3>
+                            <p class="widget-desc">Retrieve domain registration and ownership information.</p>
+                            <form id="whois-form">
+                                <input type="text" name="host" placeholder="Enter domain (e.g., google.com)" required>
+                                <button type="submit">Lookup</button>
                             </form>
-                            <div id="tcp-ping-results" class="results-summary" style="display: none;"></div>
+                            <div id="whois-results" class="results-summary" style="display: none;"></div>
                         </div>
                     </div>
 
@@ -94,18 +93,18 @@
                             <p class="widget-desc">Determines if a specific port is open or closed on a host.</p>
                             <form id="port-scan-form">
                                 <input type="text" name="host" placeholder="Enter host or IP" required>
-                                <input type="number" name="port" placeholder="Port (e.g., 80)" required>
+                                <input type="number" name="port" placeholder="Port (e.g., 80)" value="80" required>
                                 <button type="submit">Scan Port</button>
                             </form>
                             <div id="port-scan-results" class="results-summary" style="display: none;"></div>
                         </div>
                     </div>
 
-                    <!-- IP Geolocation (formerly Traceroute) -->
+                    <!-- IP Geolocation -->
                     <div id="geoip-tab" class="tab-content">
                         <div class="widget">
                             <h3><span class="icon">🌍</span>IP Geolocation Lookup</h3>
-                            <p class="widget-desc">Finds the physical location and network owner of an IP address or host.</p>
+                            <p class="widget-desc">Finds the physical location of an IP address or host.</p>
                             <form id="geoip-form">
                                 <input type="text" name="host" placeholder="Enter host or IP (e.g., 8.8.8.8)" required>
                                 <button type="submit">Locate</button>
@@ -118,7 +117,7 @@
                     <div id="dns-tab" class="tab-content">
                         <div class="widget">
                             <h3><span class="icon">🌐</span>DNS Resolver</h3>
-                            <p class="widget-desc">Retrieves DNS records (A, AAAA, MX) for a given domain.</p>
+                            <p class="widget-desc">Retrieves DNS records for a given domain.</p>
                             <form id="dns-form">
                                 <input type="text" name="host" placeholder="Enter domain (e.g., example.com)" required>
                                 <button type="submit">Resolve</button>
