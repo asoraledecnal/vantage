@@ -56,22 +56,37 @@ def is_valid_host(host):
 def send_feedback_email(name, email, subject, message):
     admin_email = os.environ.get('ADMIN_EMAIL')
     smtp_host = os.environ.get('SMTP_HOST')
-    smtp_port = int(os.environ.get('SMTP_PORT', 587))
+    smtp_port = int(os.environ.get('SMTP_PORT', 587)) 
     smtp_user = os.environ.get('SMTP_USER')
     smtp_pass = os.environ.get('SMTP_PASS')
-
-   ''' if not all([admin_email, smtp_host, smtp_user, smtp_pass]):
+    
+    if not all([admin_email, smtp_host, smtp_user, smtp_pass]):
         print("SMTP environment variables not fully configured. Skipping email send.")
-        return False '''
+        return False
 
-    msg = MIMEText(f"Name: {name}\nEmail: {email}\nSubject: {subject or 'N/A'}\nMessage: {message}")
+    smtp_pass = smtp_pass.replace(" ", "")
+
+    email_body = f"""
+    New Feedback Received:
+    ----------------------
+    Name: {name}
+    Email: {email}
+    Subject: {subject or 'N/A'}
+    
+    Message:
+    {message}
+    """
+
+    msg = MIMEText(email_body)
     msg['Subject'] = f"New Feedback: {subject or 'No Subject'}"
     msg['From'] = smtp_user
     msg['To'] = admin_email
+    
+    msg.add_header('Reply-To', email) 
 
     try:
         with smtplib.SMTP(smtp_host, smtp_port) as server:
-            server.starttls()
+            server.starttls() # Secure the connection
             server.login(smtp_user, smtp_pass)
             server.send_message(msg)
         print("Feedback email sent successfully.")
