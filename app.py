@@ -59,10 +59,13 @@ def send_feedback_email(name, email, subject, message):
     smtp_port = int(os.environ.get('SMTP_PORT', 587)) 
     smtp_user = os.environ.get('SMTP_USER')
     smtp_pass = os.environ.get('SMTP_PASS')
+    
+    # Diagnostic print statement to check variables in Render
+    print(f"DIAGNOSTIC: ADMIN_EMAIL={'present' if admin_email else 'MISSING'}, SMTP_HOST={'present' if smtp_host else 'MISSING'}, SMTP_USER={'present' if smtp_user else 'MISSING'}, SMTP_PASS={'present' if smtp_pass else 'MISSING'}")
 
-    # if not all([admin_email, smtp_host, smtp_user, smtp_pass]):
-    #     print("SMTP environment variables not fully configured. Skipping email send.")
-    #     return False
+    if not all([admin_email, smtp_host, smtp_user, smtp_pass]):
+        print("SMTP environment variables not fully configured. Skipping email send.")
+        return False
 
     smtp_pass = smtp_pass.replace(" ", "")
 
