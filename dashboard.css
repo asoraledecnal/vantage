@@ -789,13 +789,13 @@ header .logo img {
 }
 
 .status-open {
-  color: #34d399;
+  color: white;
   background-color: #34d399;
   box-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
 }
 
 .status-closed {
-  color: #f87171;
+  color: white;
   background-color: #f87171;
   box-shadow: 0 0 10px rgba(248, 113, 113, 0.5);
 }
