@@ -60,9 +60,9 @@ def send_feedback_email(name, email, subject, message):
     smtp_user = os.environ.get('SMTP_USER')
     smtp_pass = os.environ.get('SMTP_PASS')
 
-    if not all([admin_email, smtp_host, smtp_user, smtp_pass]):
-        print("SMTP environment variables not fully configured. Skipping email send.")
-        return False
+    # if not all([admin_email, smtp_host, smtp_user, smtp_pass]):
+    #     print("SMTP environment variables not fully configured. Skipping email send.")
+    #     return False
 
     msg = MIMEText(f"Name: {name}\nEmail: {email}\nSubject: {subject or 'N/A'}\nMessage: {message}")
     msg['Subject'] = f"New Feedback: {subject or 'No Subject'}"

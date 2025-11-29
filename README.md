@@ -24,8 +24,11 @@ This project prioritizes security, maintainability, and ease of deployment.
     *   `POST /api/login`: Authenticates users and manages sessions.
     *   `POST /api/logout`: Securely terminates user sessions.
     *   `GET /api/check_session`: Verifies a user's logged-in status.
+*   **Feedback System:**
+    *   `POST /api/contact`: Allows users to submit feedback, which is saved to the database and sent to an administrator email address via SMTP.
 *   **Protected Endpoints:** All diagnostic tools require a valid user session.
-*   **Input Validation:** Implements strict validation on all user inputs (e.g., hostnames, ports) to prevent command injection and other attacks.
+*   **Enhanced Input Validation:** Implements strict validation on all user inputs (e.g., hostnames, ports) to prevent command injection and other attacks, now centralized for individual lookup routes.
+*   **Domain Research Tool (`/api/domain`):** Provides a combined lookup for WHOIS, DNS, and IP Geolocation. **Note:** The network speed test is now a standalone feature due to its longer execution time.
 *   **Database:** Uses PostgreSQL via Flask-SQLAlchemy for reliable data persistence.
 *   **Security Measures:**
     *   Passwords are hashed with Flask-Bcrypt.
@@ -40,7 +43,7 @@ This project prioritizes security, maintainability, and ease of deployment.
 *   **Frontend:** HTML, CSS, JavaScript (Vanilla)
 *   **Backend:** Python 3.11, Flask
 *   **Database:** PostgreSQL
-*   **Key Python Libraries:** Flask-SQLAlchemy, Flask-Bcrypt, Flask-Limiter, gunicorn, pythonping, dnspython, speedtest-cli
+*   **Key Python Libraries:** Flask-SQLAlchemy, Flask-Bcrypt, Flask-Limiter, gunicorn, pythonping, dnspython, speedtest-cli, **python-dotenv**
 *   **Deployment:** Docker, Render
 
 ---
@@ -77,10 +80,17 @@ This project prioritizes security, maintainability, and ease of deployment.
         pip install -r requirements.txt
         ```
     *   **Set Environment Variables:**
-        Create a `.env` file in the root directory and add the following variables. This is crucial for security.
-        ```
-        SECRET_KEY='a_very_strong_and_random_secret_key'
-        DATABASE_URL='sqlite:///database.db' # For local development
+        Create a `.env` file in the root directory and add the following variables. These are crucial for the application's functionality and security. **Ensure this file is in your `.gitignore`.**
+        ```ini
+        SECRET_KEY='a_very_strong_and_random_secret_key' # Required for Flask sessions
+        DATABASE_URL='postgresql://user:password@host:port/database' # Example for PostgreSQL, or 'sqlite:///database.db' for local SQLite
+        ADMIN_EMAIL='your-admin-email@example.com' # Email address to receive feedback
+        SMTP_HOST='smtp.example.com' # SMTP host for sending emails (e.g., smtp.gmail.com)
+        SMTP_PORT='587' # SMTP port (e.g., 587 for TLS)
+        SMTP_USER='your-smtp-username@example.com' # SMTP username
+        SMTP_PASS='your-app-password' # SMTP password or app-specific password (for Gmail, use App Password)
+        PORT='5000' # Optional: Port for the Flask app to run on (e.g., 5000)
+        PRODUCTION_ORIGIN='https://your-frontend-domain.com' # Frontend domain for CORS configuration
         ```
     *   **Initialize the Database:**
         ```bash
@@ -131,6 +141,13 @@ This project is configured for easy deployment on **Render** using Docker.
     *   It builds the Docker image from your `Dockerfile`.
     *   It creates a **PostgreSQL database** and automatically injects the `DATABASE_URL`.
     *   It generates a secure `SECRET_KEY` for your production environment.
+    *   **Crucially, you must also set the following environment variables on Render (matching the values in your local `.env` file, but using your production-ready credentials):**
+        *   `ADMIN_EMAIL`
+        *   `SMTP_HOST`
+        *   `SMTP_PORT`
+        *   `SMTP_USER`
+        *   `SMTP_PASS`
+        *   `PRODUCTION_ORIGIN` (if different from the default Render URL for CORS)
 4.  **Deploy:** Click "Create Web Service" and wait for the deployment to complete.
 
 Your application backend will be live at the URL provided by Render. You can then host the static frontend files on a service like **GitHub Pages** or any static hosting provider, making sure to configure the `API_BASE_URL` in `dashboard.js` to point to your live Render backend URL.

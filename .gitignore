@@ -2,3 +2,6 @@ __pycache__/
 instance/
 venv/
 .env
+.venv/
+__pycache__/
+cookiejar.txt
