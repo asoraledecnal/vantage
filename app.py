@@ -54,20 +54,13 @@ def is_valid_host(host):
 
 
 def send_feedback_email(name, email, subject, message):
+    """Sends an email using the SendGrid Web API."""
+    sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
     admin_email = os.environ.get('ADMIN_EMAIL')
-    smtp_host = os.environ.get('SMTP_HOST')
-    smtp_port = int(os.environ.get('SMTP_PORT', 587)) 
-    smtp_user = os.environ.get('SMTP_USER')
-    smtp_pass = os.environ.get('SMTP_PASS')
-    
-    # Diagnostic print statement to check variables in Render
-    print(f"DIAGNOSTIC: ADMIN_EMAIL={'present' if admin_email else 'MISSING'}, SMTP_HOST={'present' if smtp_host else 'MISSING'}, SMTP_USER={'present' if smtp_user else 'MISSING'}, SMTP_PASS={'present' if smtp_pass else 'MISSING'}")
 
-    if not all([admin_email, smtp_host, smtp_user, smtp_pass]):
-        print("SMTP environment variables not fully configured. Skipping email send.")
-        return False
-
-    smtp_pass = smtp_pass.replace(" ", "")
+    if not sendgrid_api_key or not admin_email:
+        print("SendGrid API Key or Admin Email not configured. Skipping email send.")
+        return
 
     email_body = f"""
     New Feedback Received:
@@ -80,23 +73,29 @@ def send_feedback_email(name, email, subject, message):
     {message}
     """
 
-    msg = MIMEText(email_body)
-    msg['Subject'] = f"New Feedback: {subject or 'No Subject'}"
-    msg['From'] = smtp_user
-    msg['To'] = admin_email
-    
-    msg.add_header('Reply-To', email) 
+    payload = {
+        "personalizations": [{"to": [{"email": admin_email}]}],
+        "from": {"email": "vantagedeladiaz@gmail.com", "name": "Vantage Feedback"},
+        "reply_to": {"email": email, "name": name},
+        "subject": f"New Feedback: {subject or 'No Subject'}",
+        "content": [{"type": "text/plain", "value": email_body}]
+    }
 
     try:
-        with smtplib.SMTP(smtp_host, smtp_port) as server:
-            server.starttls() # Secure the connection
-            server.login(smtp_user, smtp_pass)
-            server.send_message(msg)
-        print("Feedback email sent successfully.")
-        return True
+        response = requests.post(
+            "https://api.sendgrid.com/v3/mail/send",
+            headers={"Authorization": f"Bearer {sendgrid_api_key}"},
+            json=payload
+        )
+        # Check for successful status codes (2xx)
+        if 200 <= response.status_code < 300:
+            print("Feedback email sent successfully via SendGrid.")
+        else:
+            print(f"Failed to send feedback email via SendGrid. Status: {response.status_code}, Body: {response.text}")
+    except requests.exceptions.RequestException as e:
+        print(f"An exception occurred while sending email via SendGrid: {e}")
     except Exception as e:
-        print(f"Failed to send feedback email: {e}")
-        return False
+        print(f"An unexpected error occurred in send_feedback_email: {e}")
 
 
 # ============================================================
