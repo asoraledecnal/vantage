@@ -5,6 +5,7 @@ This blueprint handles the contact form submission, saving the feedback to the
 database and triggering an asynchronous email notification.
 """
 import threading
+import re # Import re for regex validation
 from flask import Blueprint, request, jsonify
 from ..models import db, Feedback
 from ..services import email_service
@@ -18,11 +19,17 @@ def handle_contact():
 
     Saves the feedback to the database and dispatches an email notification
     in a background thread. Returns a 202 Accepted response immediately.
+    Includes basic email format validation.
     """
     data = request.get_json()
 
     if not data or not data.get("name") or not data.get("email") or not data.get("message"):
         return jsonify({"success": False, "error": "Name, email, and message are required."}), 400
+
+    # Basic email format validation
+    email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    if not re.match(email_regex, data["email"]):
+        return jsonify({"success": False, "error": "Invalid email address format."}), 400
 
     try:
         # Save feedback to the database first

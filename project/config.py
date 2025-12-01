@@ -30,9 +30,7 @@ class Config:
     SESSION_COOKIE_SAMESITE = 'None'
 
     # Database configuration
-    DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
-    if DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///instance/database.db')
     
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -48,5 +46,10 @@ class Config:
     # Email settings for feedback
     SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL')
+    VERIFIED_SENDER_EMAIL = os.environ.get('VERIFIED_SENDER_EMAIL', 'noreply@example.com') # Default to a generic noreply if not set
+
+    # Email Verification settings
+    VERIFICATION_TOKEN_SALT = os.environ.get('VERIFICATION_TOKEN_SALT', 'email-verification-salt')
+    FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:8080') # Default for local frontend
 
 # For potential future use, e.g., class DevelopmentConfig(Config): ...

@@ -7,22 +7,16 @@ extensions (like SQLAlchemy, Bcrypt, CORS), and registering all the
 blueprints for the different parts of the API.
 """
 
+import os
 from flask import Flask
-from flask_bcrypt import Bcrypt
-from flask_cors import CORS
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from werkzeug.middleware.proxy_fix import ProxyFix
+from flask_cors import CORS
 
 from .config import Config
-from .models import db
+from .extensions import db, bcrypt, limiter
 from .routes.auth import auth_bp
 from .routes.main import main_bp
 from .routes.feedback import feedback_bp
-
-# Initialize extensions, but don't configure them yet
-bcrypt = Bcrypt()
-limiter = Limiter(key_func=get_remote_address, default_limits=["200 per day", "50 per hour"])
 
 def create_app(config_class=Config):
     """
@@ -39,6 +33,11 @@ def create_app(config_class=Config):
     
     # Load configuration from the specified config object
     app.config.from_object(config_class)
+
+    # Force SQLite for local development to avoid environment issues
+    instance_path = os.path.join(os.path.dirname(app.root_path), 'instance')
+    os.makedirs(instance_path, exist_ok=True)
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(instance_path, 'database.db')}"
 
     # --- Initialize extensions with the app ---
     db.init_app(app)

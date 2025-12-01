@@ -9,11 +9,7 @@ entities.
 
 import uuid
 from sqlalchemy.dialects.postgresql import UUID
-from flask_sqlalchemy import SQLAlchemy
-
-# This 'db' object will be initialized in the main application factory
-# to avoid circular dependencies.
-db = SQLAlchemy()
+from .extensions import db
 
 class User(db.Model):
     """
@@ -28,6 +24,8 @@ class User(db.Model):
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = db.Column(db.Text, unique=True, nullable=False)
     password_hash = db.Column(db.Text, nullable=False)
+    is_verified = db.Column(db.Boolean, default=False, nullable=False)
+    verification_token = db.Column(db.Text, nullable=True)
 
     def __repr__(self):
         return f"<User {self.email}>"
