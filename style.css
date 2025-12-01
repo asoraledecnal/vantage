@@ -237,6 +237,7 @@ ul {
 }
 
 .hero-eyebrow {
+  margin-top: 60px;
   text-transform: uppercase;
   letter-spacing: 0.6em;
   font-size: 0.8rem;
