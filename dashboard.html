@@ -23,13 +23,18 @@
       <div class="nav__logo">
         <a href="index.html" aria-label="Back to home">Vantage</a>
       </div>
+      <div class="nav__user">
+        <!-- Backend will populate this -->
+        <span class="username" style="display: none;"></span> 
+      </div>
       <button class="nav__toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
         <span></span>
         <span></span>
       </button>
       <nav class="nav__links" id="nav-links">
         <a href="index.html">Home</a>
-        <a href="#" id="logout-btn">Logout</a>
+        <a href="login.html" class="nav__login-btn">Login</a>
+        <a href="#" id="logout-btn" class="nav__logout-btn" style="display: none;">Logout</a>
       </nav>
     </header>
 

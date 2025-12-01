@@ -659,3 +659,344 @@ ul {
   }
 }
 
+/* AUTH.CSS CONTENT BELOW */
+body.auth-body {
+  font-family: "Instrument Sans", "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(24px, 5vw, 72px);
+  background: radial-gradient(circle at top left, rgba(247, 216, 137, 0.12), transparent 55%), #020409;
+  color: #f5f5f0;
+  position: relative;
+
+  overflow-x: hidden;  
+  overflow-y: auto; 
+}
+
+
+.auth-texture {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+
+
+.auth-texture--radial {
+  background: radial-gradient(circle at 60% 40%, rgba(154, 215, 255, 0.2), transparent 60%);
+}
+
+.auth-shell {
+  min-height: 60vh;   
+  height: auto;        
+  width: min(1200px, 100%);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: clamp(32px, 6vw, 80px);
+  position: relative;
+  z-index: 1;
+}
+
+.auth-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  justify-content: center;
+}
+
+.auth-eyebrow {
+  letter-spacing: 0.6em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  color: #ffd889;
+}
+
+.auth-hero h1 {
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  line-height: 1.1;
+}
+
+.auth-lede {
+  color: #a4aac3;
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 28rem;
+}
+
+.auth-highlights {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+  color: #d7def1;
+  padding-left: 0;
+  list-style: none;
+}
+
+.auth-highlights li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.auth-highlights li::before {
+  content: "•";
+  color: #ffd889;
+  font-size: 1.2rem;
+}
+
+.auth-panel {
+  display: flex;
+  justify-content: center;
+}
+
+.auth-form {
+  width: 100%;
+  max-width: 420px;
+  padding: clamp(32px, 4vw, 48px);
+  background: rgba(8, 10, 15, 0.9);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(18px);
+  animation: fadeInScale 0.6s ease-out;
+}
+
+.form-header {
+  text-align: center;
+  margin-top: 40px;
+  margin-bottom: 35px;
+}
+
+.form-header h2 {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+}
+
+.form-header p {
+  color: #a4aac3;
+  font-size: 0.95rem;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #d7def1;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4em;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(12, 16, 25, 0.8);
+  color: #f5f5f0;
+  font-size: 1rem;
+  transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-group input::placeholder {
+  color: rgba(222, 226, 245, 0.5);
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #ffd889;
+  box-shadow: 0 0 0 4px rgba(255, 216, 137, 0.2);
+}
+
+.auth-form button[type="submit"] {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.4em;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(120deg, #ffd889, #ff9d7c);
+  color: #1a1407;
+  box-shadow: 0 20px 50px rgba(255, 157, 124, 0.35);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.auth-form button[type="submit"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 25px 60px rgba(255, 157, 124, 0.45);
+}
+
+.auth-form button[type="submit"]:active {
+  transform: translateY(0);
+}
+
+#message {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: none;
+  animation: slideDown 0.3s ease-out;
+}
+
+.message.success {
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.message.error {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.signup-link {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: #cbd5e1;
+}
+
+.signup-link a {
+  color: #ffd889;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.signup-link a:hover {
+  text-decoration: underline;
+}
+
+.back-btn {
+  display: block;
+  text-align: center;
+  color: #a4aac3;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 20px;
+}
+
+.back-btn:hover {
+  color: #ffd889;
+}
+
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper input {
+  padding-right: 52px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease;
+}
+
+.password-toggle:hover {
+  color: #ffd889;
+}
+
+.eye-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.label-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+
+@media (max-width: 900px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .auth-hero {
+    text-align: center;
+    align-items: center;
+  }
+
+  .auth-highlights li {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .auth-form {
+    border-radius: 20px;
+    padding: 28px 24px;
+  }
+
+  .form-group label {
+    letter-spacing: 0.2em;
+  }
+
+  .auth-form button {
+    letter-spacing: 0.2em;
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.forgot-password {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #a4aac3; /* Adjust color to match surrounding text or design */
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.forgot-password:hover {
+  color: #ffd889; /* Highlight on hover */
+  text-decoration: underline;
+}
