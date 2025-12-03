@@ -19,9 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (signupForm) {
     signupForm.addEventListener("submit", async (event) => {
-      console.log("Form submission listener started...");
       event.preventDefault()
-      console.log("event.preventDefault() called...");
 
       const email = signupForm.querySelector("#email").value
       const password = signupForm.querySelector("#password").value
@@ -50,11 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (response.ok) {
           if (messageDiv) messageDiv.className = "message success"
-          console.log("Signup successful, redirecting to OTP page...");
-          // Redirect to the OTP verification page on success, passing email as a query param
-          setTimeout(() => {
-            window.location.href = `verify_otp.html?email=${encodeURIComponent(email)}`;
-          }, 2000);
+          signupForm.reset()
         } else {
           if (messageDiv) messageDiv.className = "message error"
         }

@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = "login.html";
     }
   };
-  checkAuth(); 
+  // checkAuth(); // Uncomment this line to enforce login
 
   // --- Logout Button ---
   const logoutBtn = document.getElementById("logout-btn");

@@ -16,4 +16,4 @@ COPY . .
 EXPOSE 8000
 
 # Start the app with gunicorn
-CMD ["gunicorn", "run:app", "--bind", "0.0.0.0:8000", "--forwarded-allow-ips", "*"]
+CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:8000", "--forwarded-allow-ips", "*"]

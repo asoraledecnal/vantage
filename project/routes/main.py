@@ -12,11 +12,6 @@ from ..services import domain_service
 
 main_bp = Blueprint('main', __name__, url_prefix='/api')
 
-@main_bp.route('/health', methods=['GET'])
-def health_check():
-    """Health check endpoint for Render."""
-    return jsonify({"status": "ok"}), 200
-
 # Decorator to ensure user is logged in
 def login_required(f):
     """

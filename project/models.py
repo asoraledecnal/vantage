@@ -9,7 +9,6 @@ entities.
 
 import uuid
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy import DateTime
 from .extensions import db
 
 class User(db.Model):
@@ -20,17 +19,13 @@ class User(db.Model):
         id (uuid): The primary key for the user, a UUID.
         email (str): The user's unique email address.
         password_hash (str): The user's securely hashed password.
-        is_verified (bool): Whether the user has verified their account.
-        otp_hash (str): The hashed one-time password for verification.
-        otp_expiry (datetime): The expiration time for the current OTP.
     """
     __tablename__ = 'users'
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = db.Column(db.Text, unique=True, nullable=False)
     password_hash = db.Column(db.Text, nullable=False)
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
-    otp_hash = db.Column(db.Text, nullable=True)
-    otp_expiry = db.Column(DateTime, nullable=True)
+    verification_token = db.Column(db.Text, nullable=True)
 
     def __repr__(self):
         return f"<User {self.email}>"
