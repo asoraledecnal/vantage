@@ -35,7 +35,7 @@
                     <label for="otp">One-Time Password</label>
                     <input type="text" id="otp" name="otp" placeholder="123456" required pattern="\d{6}" title="Please enter a 6-digit OTP" autocomplete="one-time-code">
                 </div>
-                <button type="submit" class="btn-primary">Verify Account</button>
+                <button type="submit">Verify Account</button>
                 <div id="message"></div>
                 <p class="signup-link">Didn't get an email? <a href="signup.html">Try signing up again</a></p>
                 <a href="index.html" class="back-btn">← Back to Home</a>
@@ -48,13 +48,10 @@
             const otpForm = document.getElementById('otp-form');
             const messageDiv = document.getElementById('message');
             const emailDisplay = document.getElementById('user-email-display');
-            const submitButton = otpForm.querySelector('button[type="submit"]');
-            const signupLink = document.querySelector('.signup-link');
-
-            // Get email and source from URL query parameter
+            
+            // Get email from URL query parameter
             const urlParams = new URLSearchParams(window.location.search);
             const email = urlParams.get('email');
-            const source = urlParams.get('source');
 
             if (email) {
                 emailDisplay.textContent = decodeURIComponent(email);
@@ -62,12 +59,7 @@
                 // Handle case where email is missing
                 emailDisplay.textContent = "your email";
                 const formHeader = document.querySelector('.form-header');
-                formHeader.innerHTML += '<p class="message error">Could not find email from URL. Please try again.</p>';
-            }
-
-            if (source === 'reset') {
-                submitButton.textContent = 'Verify OTP';
-                signupLink.innerHTML = 'Didn\'t get an email? <a href="forgot_password.html">Try again</a>';
+                formHeader.innerHTML += '<p class="message error">Could not find email from URL. Please try signing up again.</p>';
             }
             
             // --- Configuration for Backend URL ---
@@ -82,7 +74,7 @@
                     
                     // Ensure email was found from URL before submitting
                     if (!email) {
-                        messageDiv.textContent = 'Email is missing from URL. Please try again.';
+                        messageDiv.textContent = 'Email is missing from URL. Please sign up again.';
                         messageDiv.className = 'message error';
                         messageDiv.style.display = 'block';
                         return;
@@ -108,19 +100,10 @@
 
                         if (response.ok) {
                             messageDiv.className = 'message success';
-                            if (source === 'reset') {
-                                // Redirect to reset password page on success
-                                messageDiv.textContent = 'OTP verified. Redirecting to reset password…';
-                                setTimeout(() => {
-                                    window.location.href = `reset_password.html?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`;
-                                }, 2000);
-                            } else {
-                                // Redirect to login page on success
-                                messageDiv.textContent = 'Account verified. Redirecting to login…';
-                                setTimeout(() => {
-                                    window.location.href = 'login.html';
-                                }, 2000);
-                            }
+                            // Redirect to login page on success
+                            setTimeout(() => {
+                                window.location.href = 'login.html';
+                            }, 2000);
                         } else {
                             messageDiv.className = 'message error';
                         }

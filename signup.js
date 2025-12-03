@@ -15,14 +15,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const BACKEND_URL = isLocal ? "http://127.0.0.1:5000" : "https://vantage-backend-api.onrender.com" ;
  
   const signupForm = document.getElementById("signup-form")
-  const signupBtn = document.getElementById("signup-btn")
   const messageDiv = document.getElementById("message")
 
-  if (signupBtn) {
-    signupBtn.addEventListener("click", async (event) => {
+  if (signupForm) {
+    signupForm.addEventListener("submit", async (event) => {
+      console.log("Form submission listener started...");
+      event.preventDefault()
+      console.log("event.preventDefault() called...");
+
       const email = signupForm.querySelector("#email").value
       const password = signupForm.querySelector("#password").value
-      const username = signupForm.querySelector("#username").value
 
       if (messageDiv) {
         messageDiv.textContent = ""
@@ -36,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email, password, username }),
+          body: JSON.stringify({ email, password }),
         })
 
         const result = await response.json()
@@ -49,7 +51,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (response.ok) {
           if (messageDiv) messageDiv.className = "message success"
           console.log("Signup successful, redirecting to OTP page...");
-          window.location.href = `verify_otp.html?email=${encodeURIComponent(email)}`;
+          // Redirect to the OTP verification page on success, passing email as a query param
+          setTimeout(() => {
+            window.location.href = `verify_otp.html?email=${encodeURIComponent(email)}`;
+          }, 2000);
         } else {
           if (messageDiv) messageDiv.className = "message error"
         }

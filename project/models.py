@@ -26,7 +26,6 @@ class User(db.Model):
     """
     __tablename__ = 'users'
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    username = db.Column(db.Text, unique=True, nullable=False)
     email = db.Column(db.Text, unique=True, nullable=False)
     password_hash = db.Column(db.Text, nullable=False)
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
@@ -34,7 +33,7 @@ class User(db.Model):
     otp_expiry = db.Column(DateTime, nullable=True)
 
     def __repr__(self):
-        return f"<User {self.username}>"
+        return f"<User {self.email}>"
 
 class Feedback(db.Model):
     """
