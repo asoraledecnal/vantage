@@ -13,6 +13,11 @@ from dotenv import load_dotenv
 # Load environment variables from a .env file
 load_dotenv()
 
+# --- Absolute Path Setup for SQLite ---
+# This ensures the path to the database is always correct, regardless of
+# where the application is run from.
+basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+
 class Config:
     """
     Base configuration class.
@@ -30,10 +35,13 @@ class Config:
     SESSION_COOKIE_SAMESITE = 'None'
 
     # Database configuration
-    DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///instance/database.db')
-    
+    DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///' + os.path.join(basedir, 'instance', 'database.db'))
+    if DATABASE_URL.startswith('postgres://'):
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
 
     # CORS settings
     CORS_ORIGINS = [
