@@ -64,8 +64,8 @@ ul {
 }
 
 .texture-layer--noise {
-  background: url("assets/noise.png");
-  opacity: 0.05;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08), transparent 68%);
+  opacity: 0.15;
   mix-blend-mode: screen;
 }
 
@@ -817,7 +817,7 @@ body.auth-body {
   box-shadow: 0 0 0 4px rgba(255, 216, 137, 0.2);
 }
 
-.auth-form button[type="submit"] {
+.auth-form .btn-primary {
   width: 100%;
   padding: 16px;
   border: none;
