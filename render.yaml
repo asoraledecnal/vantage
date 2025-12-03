@@ -1,29 +1,50 @@
-# render.yaml
+# This file defines the services for deploying the Vantage application on Render.
+# It includes a web service for the Flask backend and a PostgreSQL database.
 
 services:
+  # Web Service: The Flask backend API
   - type: web
-    name: vantage-backend
-    env: docker
-    plan: free # WARNING: Render's free plan may block ICMP traffic, which can cause tools like Ping and Traceroute to fail.
-               # For full functionality, you may need to upgrade to a paid plan.
-    dockerfilePath: ./Dockerfile
-    envVars:
-      # The SECRET_KEY is crucial for session security. 
-      # generateValue: true tells Render to create a secure, random key for you.
-      - key: SECRET_KEY
-        generateValue: true
+    name: vantage-backend-api
+    env: python
+    plan: free
+    region: oregon # e.g., oregon, frankfurt
 
-      # This links the DATABASE_URL environment variable to the connection string
-      # of the PostgreSQL database defined below.
+    # Build command: Installs dependencies and initializes the database schema.
+    # This runs every time you deploy a new version.
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      export FLASK_APP=run.py
+      flask db-init
+
+    # Start command: Runs the application using the Gunicorn production server.
+    startCommand: "gunicorn run:app"
+
+    # Health Check: Render uses this path to determine if a deployment is live and healthy.
+    healthCheck:
+      path: /api/health
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10 # Must match the version used in your Dockerfile/local env
+      - key: FLASK_APP
+        value: run
       - key: DATABASE_URL
         fromDatabase:
-          name: vantage
+          name: vantage-db
           property: connectionString
+      # SECRET_KEY, OTP_SALT, and SendGrid keys should be set as "Secret Files"
+      # or environment variables in the Render.com dashboard for security.
+      # Avoid hardcoding secrets in this file.
+      - key: SECRET_KEY
+        generateValue: true # Let Render generate a secure secret key
+      - key: OTP_SALT
+        generateValue: true # Let Render generate a secure salt for OTPs
 
-databases:
-  # This defines a PostgreSQL database to be created and managed by Render.
-  # The free plan is suitable for development and small projects.
-  - name: vantage
-    databaseName: vantage # You can name your database
-    user: vantage_user     # You can name the user
+  # Database Service: A PostgreSQL database managed by Render
+  - type: psql
+    name: vantage-db
     plan: free
+    region: oregon
+    databaseName: vantage
+    user: vantage_user

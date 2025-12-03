@@ -10,46 +10,22 @@ specifics of the API calls.
 import os
 import requests
 
-def send_verification_email(user_email: str, token: str, frontend_url: str):
+def _send_email(user_email: str, subject: str, body: str):
     """
-    Sends an email verification link to a newly registered user.
-
-    Args:
-        user_email: The email address of the user to verify.
-        token: The unique verification token generated for the user.
-        frontend_url: The base URL of the frontend application where the user
-                      will click the verification link.
+    A generic helper function to send an email via SendGrid.
     """
     sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
     verified_sender = os.environ.get('VERIFIED_SENDER_EMAIL')
 
     if not sendgrid_api_key or not verified_sender:
-        print("Email service not fully configured for verification (SENDGRID_API_KEY or VERIFIED_SENDER_EMAIL is missing). Skipping verification email send.")
-        return
-
-    verification_link = f"{frontend_url}/verify?token={token}" # Assuming a frontend /verify route
-    
-    email_body = f"""
-    Hello,
-
-    Thank you for registering with Vantage.
-    Please click the link below to verify your email address:
-
-    {verification_link}
-
-    This link will expire in a short time.
-
-    If you did not register for this service, please ignore this email.
-
-    Best regards,
-    The Vantage Team
-    """
+        print(f"Email service not configured. Skipping email to {user_email}.")
+        return False
 
     payload = {
         "personalizations": [{"to": [{"email": user_email}]}],
-        "from": {"email": verified_sender, "name": "Vantage Verification"},
-        "subject": "Vantage: Verify Your Email Address",
-        "content": [{"type": "text/plain", "value": email_body}]
+        "from": {"email": verified_sender, "name": "Vantage"},
+        "subject": subject,
+        "content": [{"type": "text/plain", "value": body}]
     }
 
     try:
@@ -59,13 +35,61 @@ def send_verification_email(user_email: str, token: str, frontend_url: str):
             json=payload
         )
         if 200 <= response.status_code < 300:
-            print(f"Verification email sent successfully to {user_email}.")
+            print(f"Email sent successfully to {user_email}.")
+            return True
         else:
-            print(f"Failed to send verification email to {user_email}. Status: {response.status_code}, Body: {response.text}")
+            print(f"Failed to send email to {user_email}. Status: {response.status_code}, Body: {response.text}")
+            return False
     except requests.exceptions.RequestException as e:
-        print(f"A network exception occurred while sending verification email: {e}")
+        print(f"A network exception occurred while sending email: {e}")
+        return False
     except Exception as e:
-        print(f"An unexpected error occurred in send_verification_email: {e}")
+        print(f"An unexpected error occurred in _send_email: {e}")
+        return False
+
+def send_otp_email(user_email: str, otp: str):
+    """
+    Sends a verification OTP to a newly registered user's email.
+    """
+    subject = "Vantage: Your Verification Code"
+    body = f"""
+    Hello,
+
+    Thank you for registering with Vantage.
+    Your One-Time Password (OTP) for account verification is:
+
+    {otp}
+
+    This code will expire in 5 minutes.
+
+    If you did not register for this service, please ignore this email.
+
+    Best regards,
+    The Vantage Team
+    """
+    return _send_email(user_email, subject, body)
+
+def send_password_reset_email(user_email: str, otp: str):
+    """
+    Sends a password reset OTP to a user's email.
+    """
+    subject = "Vantage: Your Password Reset Code"
+    body = f"""
+    Hello,
+
+    We received a request to reset your password.
+    Your One-Time Password (OTP) for password reset is:
+
+    {otp}
+
+    This code will expire in 5 minutes.
+
+    If you did not request a password reset, please ignore this email.
+
+    Best regards,
+    The Vantage Team
+    """
+    return _send_email(user_email, subject, body)
 
 
 def send_feedback_email(name: str, email: str, subject: str, message: str):

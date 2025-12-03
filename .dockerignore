@@ -1,0 +1,26 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Virtual environment
+.venv
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Instance folder (contains local DB)
+instance/
+
+# Logs
+logs/
+
+# IDE settings
+.vscode/
+.idea/
