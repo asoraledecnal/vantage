@@ -5,59 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Vantage</title>
     <link rel="stylesheet" href="style.css">
-
-    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-</head>
-<body class="auth-body">
-
-    <div class="auth-texture auth-texture--radial" aria-hidden="true"></div>
-
-    <main class="auth-shell">
-        <section class="auth-hero">
-            <p class="auth-eyebrow">Network Command</p>
-            <h1>Log back into Vantage.</h1>
-            <p class="auth-lede">
-                Resume your cinematic view of diagnostics, incident narratives, and live telemetry rendered the Vantage way.
-            </p>
-            <ul class="auth-highlights">
-                <li>Realtime signal + packet tracing</li>
-                <li>Human-readable incident storytelling</li>
-                <li>End-to-end vantage scoreboards</li>
-            </ul>
-        </section>
-
-        <section class="auth-panel">
-            <form id="login-form" class="auth-form">
-                <div class="form-header">
-                    <h2>Welcome Back</h2>
-                    <p>Authenticate with your console credentials.</p>
-                </div>
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" name="username" placeholder="lanceedward" required>
-                </div>
-                <div class="form-group">
-                    <div class="label-group">
-                        <label for="password">Password</label>
-                        <a href="forgotpassword.html" class="forgot-password">Forgot password?</a>
-                    </div>
-                    <div class="password-wrapper">
-                        <input type="password" id="password" name="password" placeholder="••••••••" required>
-                        <button type="button" class="password-toggle" id="toggle-password" title="Show/Hide password">
-                            <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <button type="submit">Sign In</button>
-                <div id="message"></div>
-                <p class="signup-link">Don't have an account? <a href="signup.html">Create one</a></p>
-                <a href="index.html" class="back-btn">← Back to Home</a>
-            </form>
-        </section>
-    </main>
-    <script src="login.js"></script>
-</body>
+                                                                                                                                          
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">                                                                      
+</head>                                                                                                                                   
+<body class="auth-body">                                                                                                                  
+                                                                                                                                          
+    <div class="auth-texture auth-texture--radial" aria-hidden="true"></div>                                                              
+                                                                                                                                          
+    <main class="auth-shell">                                                                                                             
+        <section class="auth-hero">                                                                                                       
+            <p class="auth-eyebrow">Network Command</p>                                                                                   
+            <h1>Log back into Vantage.</h1>                                                                                               
+            <p class="auth-lede">                                                                                                         
+                Resume your cinematic view of diagnostics, incident narratives, and live telemetry rendered the Vantage way.              
+            </p>                                                                                                                          
+            <ul class="auth-highlights">                                                                                                  
+                <li>Realtime signal + packet tracing</li>                                                                                 
+                <li>Human-readable incident storytelling</li>                                                                             
+                <li>End-to-end vantage scoreboards</li>                                                                                   
+            </ul>                                                                                                                         
+        </section>                                                                                                                        
+                                                                                                                                          
+        <section class="auth-panel">                                                                                                      
+            <form id="login-form" class="auth-form">                                                                                      
+                <div class="form-header">                                                                                                 
+                    <h2>Welcome Back</h2>                                                                                                 
+                    <p>Authenticate with your console credentials.</p>                                                                    
+                </div>                                                                                                                    
+                <div class="form-group">                                                                                                  
+                    <label for="login_identifier">Email or Username</label>                                                               
+                    <input type="text" id="login_identifier" name="login_identifier" placeholder="your@email.com or username" required>   
+                </div>                                                                                                                    
+                <div class="form-group">                                                                                                  
+                    <div class="label-group">                                                                                             
+                        <label for="password">Password</label>                                                                            
+                        <a href="forgot_password.html" class="forgot-password">Forgot password?</a>                                       
+                    </div>                                                                                                                
+                    <div class="password-wrapper">                                                                                        
+                        <input type="password" id="password" name="password" placeholder="••••••••" required>                             
+                        <button type="button" class="password-toggle" id="toggle-password" title="Show/Hide password">                    
+                            <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">                 
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>                                            
+                                <circle cx="12" cy="12" r="3"></circle>                                                                   
+                            </svg>                                                                                                        
+                        </button>                                                                                                         
+                    </div>                                                                                                                
+                </div>                                                                                                                    
+                <button type="submit" class="btn-primary">Sign In</button>                                                                
+                <div id="message"></div>                                                                                                  
+                <p class="signup-link">Don't have an account? <a href="signup.html">Create one</a></p>                                    
+                <a href="index.html" class="back-btn">← Back to Home</a>                                                                  
+            </form>                                                                                                                       
+        </section>                                                                                                                        
+    </main>                                                                                                                               
+    <script src="login.js"></script>                                                                                                      
+</body>                                                                                                                                   
 </html>
