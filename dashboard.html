@@ -33,7 +33,7 @@
       </button>
       <nav class="nav__links" id="nav-links">
         <a href="index.html">Home</a>
-        <a href="#profile-section" class="nav__profile-link">Profile</a>
+        <a href="profile.html" class="nav__profile-link">Profile</a>
         <a href="#" id="logout-btn" class="nav__logout-btn">Logout</a>
       </nav>
     </header>
@@ -145,74 +145,7 @@
                 </div>
             </div>
         </section>
-        <div class="profile-backdrop"></div>
-        <section class="profile-flyout" id="profile-section">
-            <div class="profile-shell">
-                <div class="profile-header">
-                    <div>
-                        <p class="eyebrow">Control Center</p>
-                        <h2>Account Profile</h2>
-                        <p class="profile-desc">Manage personal details, trigger password resets, and see account status.</p>
-                    </div>
-                </div>
-                <div class="profile-grid">
-                    <form id="profile-info-form" class="profile-card">
-                        <div class="card-header">
-                            <div>
-                                <div class="result-header">Profile</div>
-                                <p class="card-subtitle">Update your name and contact info.</p>
-                            </div>
-                            <span class="badge badge-soft">Coming soon</span>
-                        </div>
-                        <div class="form-row">
-                            <label for="profile-firstname">First Name</label>
-                            <input type="text" id="profile-firstname" name="firstname" placeholder="First name">
-                        </div>
-                        <div class="form-row">
-                            <label for="profile-lastname">Last Name</label>
-                            <input type="text" id="profile-lastname" name="lastname" placeholder="Last name">
-                        </div>
-                        <div class="form-row">
-                            <label for="profile-username">Username</label>
-                            <input type="text" id="profile-username" name="username" placeholder="username">
-                        </div>
-                        <div class="form-row">
-                            <label for="profile-phone">Phone</label>
-                            <input type="tel" id="profile-phone" name="phone" placeholder="+63...">
-                        </div>
-                        <button type="submit" class="ghost-button">Save changes</button>
-                        <p class="note-text">Profile editing endpoint not yet available.</p>
-                    </form>
 
-                    <form id="profile-password-form" class="profile-card">
-                        <div class="card-header">
-                            <div>
-                                <div class="result-header">Password</div>
-                                <p class="card-subtitle">Reset your password with a new OTP.</p>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <label for="profile-password-email">Email</label>
-                            <input type="email" id="profile-password-email" name="email" placeholder="you@example.com" required>
-                        </div>
-                        <button type="submit" class="cta-button">Send reset OTP</button>
-                        <div id="profile-password-message" class="inline-message"></div>
-                    </form>
-
-                    <form id="profile-delete-form" class="profile-card danger-card">
-                        <div class="card-header">
-                            <div>
-                                <div class="result-header">Delete Account</div>
-                                <p class="card-subtitle">Permanently remove your account data.</p>
-                            </div>
-                            <span class="badge badge-danger">Danger</span>
-                        </div>
-                        <p class="note-text">This operation is permanent. Account deletion API is not enabled yet.</p>
-                        <button type="submit" class="danger-button">Delete account</button>
-                    </form>
-                </div>
-            </div>
-        </section>
     </main>
 
     <!-- Assistant Launcher -->
