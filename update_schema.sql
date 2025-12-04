@@ -10,8 +10,15 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Table for user authentication, directly related to /api/signup and /api/login
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    username TEXT UNIQUE NOT NULL,
+    firstname TEXT,
+    lastname TEXT,
+    phone TEXT,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    otp_hash TEXT,
+    otp_expiry TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -60,6 +67,7 @@ CREATE TABLE feedback (
 
 -- Create indexes for foreign keys and frequently queried columns
 CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_username ON users(username);
 CREATE INDEX idx_documents_file_path ON documents(file_path);
 CREATE INDEX idx_diagnostic_results_user_id ON diagnostic_results(user_id);
 CREATE INDEX idx_incidents_status ON incidents(status);
