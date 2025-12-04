@@ -241,7 +241,10 @@ def forgot_password():
     user = User.query.filter_by(email=email).first()
     if not user:
         current_app.logger.info(f"Password reset request for non-existent user: {email}")
-        return jsonify({"message": "If an account with that email exists, a password reset OTP has been sent."}), 200
+        return jsonify({
+            "message": "No account found for this email. Please create an account.",
+            "action": "signup"
+        }), 200
 
     if not user.is_verified:
         # Prevent reset from clobbering the signup verification OTP; prompt verification first.

@@ -14,7 +14,7 @@ This project is built with a focus on clean architecture, maintainability, and e
 - **Secure Authentication:** Session-based login with bcrypt-hashed passwords, OTP verification, and logout endpoints.
 - **OTP-PASSWORD RESET:** The `/api/forgot-password` and `/api/reset-password` routes use 6-digit numeric OTPs (hashed+salted, 5-minute expiry) to avoid link-based enumeration. Resetting a password invalidates any active OTP and clears the session.
 - **Protected Diagnostics:** All network tools require an authenticated session; requests are rate-limited and validated for host/port safety.
-- **Dashboard Assistant:** `/api/assistant` provides conversational guidance for dashboard tools, returning tips and example requests to help users navigate the UI.
+- **Dashboard Assistant:** `/api/assistant` provides conversational guidance for dashboard tools, returning tips and example requests. It now carries the most recent tool context (domain/port/speed, etc.) into answers so responses reference what the user just ran. Optional Gemini integration is supported when `GEMINI_API_KEY` is set; otherwise heuristic guidance is used.
 
 ### Diagnostic Tools
 - **WHOIS Lookup:** Retrieves domain registration information.
@@ -121,6 +121,10 @@ The project follows a standard package-based structure to ensure a clean separat
 
     # The admin email address that will receive feedback notifications
     ADMIN_EMAIL='your-admin-email@example.com'
+
+    # Optional: Gemini assistant (if configured)
+    GEMINI_API_KEY='your-gemini-key'   # leave unset to use heuristic assistant only
+    GEMINI_MODEL='gemini-2.5-flash'    # optional override
     ```
 
 5.  **Initialize the Database:**

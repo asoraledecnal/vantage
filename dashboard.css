@@ -1009,7 +1009,7 @@ header .logo img {
   text-transform: uppercase;
   letter-spacing: 0.2em;
   font-weight: 700;
-  cursor: not-allowed;
+  cursor: pointer; /* Changed from not-allowed */
 }
 
 .cta-button {
@@ -1045,7 +1045,7 @@ header .logo img {
   text-transform: uppercase;
   letter-spacing: 0.2em;
   font-weight: 700;
-  cursor: not-allowed;
+  cursor: pointer; /* Changed from not-allowed */
 }
 
 .note-text {

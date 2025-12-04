@@ -841,6 +841,43 @@ body.auth-body {
   transform: translateY(0);
 }
 
+.auth-form .form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.auth-form .form-actions.dual {
+  flex-direction: row;
+  gap: 12px;
+}
+
+.auth-form .form-actions.dual > button {
+  width: 100%;
+}
+
+.auth-form .secondary-action {
+  width: 100%;
+  display: block;
+  text-align: center;
+  padding: 14px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 216, 137, 0.35);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.auth-form .secondary-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 15px 30px rgba(255, 216, 137, 0.15);
+  border-color: rgba(255, 216, 137, 0.55);
+}
+
 #message {
   margin-top: 20px;
   padding: 14px 16px;
@@ -933,6 +970,7 @@ body.auth-body {
     justify-content: space-between;
     align-items: baseline;
 }
+
 
 
 @media (max-width: 900px) {
