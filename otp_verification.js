@@ -10,6 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("otp-verification-form");
   const messageDiv = document.getElementById("message");
   const emailDisplay = document.getElementById("user-email-display");
+  const ledeVerify = document.getElementById("lede-verify");
+  const ledeReset = document.getElementById("lede-reset");
   const passwordGroup = document.getElementById("password-group");
   const confirmGroup = document.getElementById("confirm-password-group");
   const submitButton = document.getElementById("submit-button");
@@ -40,10 +42,14 @@ document.addEventListener("DOMContentLoaded", () => {
     passwordGroup.style.display = "none";
     confirmGroup.style.display = "none";
     submitButton.textContent = "Verify OTP";
+    if (ledeReset) ledeReset.style.display = "inline";
+    if (ledeVerify) ledeVerify.style.display = "none";
   } else {
     passwordGroup.style.display = "none";
     confirmGroup.style.display = "none";
     submitButton.textContent = "Verify account";
+    if (ledeVerify) ledeVerify.style.display = "inline";
+    if (ledeReset) ledeReset.style.display = "none";
   }
 
   const redirectToLogin = (reason = "Redirecting to login.html") => {
