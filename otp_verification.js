@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const email = params.get("email");
   const mode = (params.get("mode") || FLOW_MODES.VERIFY).toLowerCase();
   const flowMode = Object.values(FLOW_MODES).includes(mode) ? mode : FLOW_MODES.VERIFY;
+  let passwordStepUnlocked = false;
 
   if (!email) {
     showMessage(messageDiv, "Email is missing from the URL. Start from signup or reset again.", "error");
@@ -35,9 +36,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const isResetFlow = flowMode === FLOW_MODES.RESET;
   if (isResetFlow) {
-    passwordGroup.style.display = "block";
-    confirmGroup.style.display = "block";
-    submitButton.textContent = "Submit new password";
+    // Start with OTP only; reveal password fields after OTP step
+    passwordGroup.style.display = "none";
+    confirmGroup.style.display = "none";
+    submitButton.textContent = "Verify OTP";
   } else {
     passwordGroup.style.display = "none";
     confirmGroup.style.display = "none";
@@ -65,6 +67,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (isResetFlow) {
+      // First step: after OTP entry, reveal password fields
+      if (!passwordStepUnlocked) {
+        passwordStepUnlocked = true;
+        passwordGroup.style.display = "block";
+        confirmGroup.style.display = "block";
+        submitButton.textContent = "Reset password";
+        showMessage(messageDiv, "OTP entered. Now set your new password.", "info");
+        form.querySelector("#new-password")?.focus();
+        return;
+      }
       if (!newPassword || !confirmPassword) {
         showMessage(messageDiv, "Both password fields are required.", "error");
         return;
