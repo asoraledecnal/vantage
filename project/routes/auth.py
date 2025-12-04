@@ -32,7 +32,7 @@ def signup():
     """
     try:
         session.clear()
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         email = data.get("email")
         firstname = data.get("firstname")
         lastname = data.get("lastname")
@@ -97,7 +97,7 @@ def verify_otp():
     """
     Handles OTP verification for a user's account.
     """
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     email = data.get("email")
     if not email or not data.get("otp"):
         return jsonify({"message": "Email and OTP are required."}), 400
@@ -162,7 +162,7 @@ def login():
     """
     Authenticates a user and creates a session.
     """
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     identifier = data.get("login_identifier") or data.get("email")
     user = None
     if identifier:
@@ -230,6 +230,16 @@ def forgot_password():
         current_app.logger.info(f"Password reset request for non-existent user: {email}")
         return jsonify({"message": "If an account with that email exists, a password reset OTP has been sent."}), 200
 
+    if not user.is_verified:
+        # Prevent reset from clobbering the signup verification OTP; prompt verification first.
+        otp = otp_service.generate_otp()
+        user.otp_hash = otp_service.hash_otp(otp)
+        user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
+        db.session.commit()
+        threading.Thread(target=email_service.send_otp_email, args=(user.email, otp)).start()
+        current_app.logger.warning(f"Password reset requested for unverified user: {email}. Sent verification OTP instead.")
+        return jsonify({"message": "Account not verified. A new OTP has been sent to your email to verify the account."}), 200
+
     otp = otp_service.generate_otp()
     user.otp_hash = otp_service.hash_otp(otp)
     user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
@@ -246,7 +256,7 @@ def reset_password():
     """
     Resets the user's password using a valid OTP.
     """
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     email = data.get("email")
     required_fields = ["email", "otp", "new_password"]
     if not all(field in data and data.get(field) for field in required_fields):
@@ -256,6 +266,10 @@ def reset_password():
     if not user:
         current_app.logger.warning(f"Password reset attempt for non-existent user: {email}")
         return jsonify({"message": "Invalid email or OTP."}), 400
+
+    if not user.is_verified:
+        current_app.logger.warning(f"Password reset attempt for unverified user: {email}")
+        return jsonify({"message": "Account not verified. Please verify your account first."}), 400
 
     expiry = _to_utc(user.otp_expiry)
     if not expiry or expiry < datetime.now(timezone.utc):
