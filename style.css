@@ -241,6 +241,7 @@ ul {
   letter-spacing: 0.6em;
   font-size: 0.8rem;
   color: var(--accent-amber);
+  margin-top: 80px;
   margin-bottom: 24px;
 }
 
