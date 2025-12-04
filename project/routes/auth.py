@@ -33,14 +33,22 @@ def signup():
     try:
         session.clear()
         data = request.get_json(silent=True) or {}
-        email = data.get("email")
-        firstname = data.get("firstname")
-        lastname = data.get("lastname")
-        username = data.get("username")
-        phone = data.get("phone")
+        email = (data.get("email") or "").strip()
+        firstname = (data.get("firstname") or "").strip()
+        lastname = (data.get("lastname") or "").strip()
+        username = (data.get("username") or "").strip()
+        phone = (data.get("phone") or "").strip() or None
 
-        if not email or not data.get("password"):
-            return jsonify({"message": "Email and password are required!"}), 400
+        required_fields = {
+            "email": email,
+            "password": (data.get("password") or "").strip(),
+            "firstname": firstname,
+            "lastname": lastname,
+            "username": username,
+        }
+        missing = [field for field, value in required_fields.items() if not value]
+        if missing:
+            return jsonify({"message": f"Missing required fields: {', '.join(missing)}."}), 400
 
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
@@ -52,16 +60,21 @@ def signup():
                 current_app.logger.info(f"Resent OTP to unverified user: {email}")
                 threading.Thread(target=email_service.send_otp_email, args=(existing_user.email, otp)).start()
                 return jsonify({
-                    "message": "Account pending verification. A new OTP has been sent to your email."
+                    "message": "Account already created but not verified. A new OTP has been sent. Redirecting to verification.",
+                    "email": existing_user.email,
+                    "action": "verify"
                 }), 200
             current_app.logger.warning(f"Signup attempt for existing email: {email}")
-            return jsonify({"message": "User with this email already exists!"}), 409
+            return jsonify({
+                "message": "An account with this email is already registered and verified. Redirecting to login.",
+                "action": "login"
+            }), 409
 
         if User.query.filter_by(username=username).first():
             current_app.logger.warning(f"Signup attempt for existing username: {username}")
-            return jsonify({"message": "User with this username already exists!"}), 409
+            return jsonify({"message": "Username is taken. Please choose another."}), 409
 
-        hashed_password = bcrypt.generate_password_hash(data["password"]).decode("utf-8")
+        hashed_password = bcrypt.generate_password_hash(required_fields["password"]).decode("utf-8")
         
         otp = otp_service.generate_otp()
         otp_hash = otp_service.hash_otp(otp)
