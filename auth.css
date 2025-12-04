@@ -118,6 +118,12 @@ body.auth-body {
   font-size: 0.95rem;
 }
 
+.field-note {
+  margin-bottom: 16px;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}
+
 .form-group {
   margin-bottom: 24px;
 }
@@ -178,8 +184,41 @@ body.auth-body {
   transform: translateY(0);
 }
 
+.auth-form .form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.auth-form .secondary-action {
+  width: 100%;
+  display: block;
+  text-align: center;
+  padding: 14px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 216, 137, 0.35);
+  background: linear-gradient(120deg, rgba(255, 216, 137, 0.08), rgba(255, 157, 124, 0.05));
+  color: #ffd889;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border 0.25s ease, background 0.25s ease, color 0.25s ease;
+}
+
+.auth-form .secondary-action:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(120deg, rgba(255, 216, 137, 0.16), rgba(255, 157, 124, 0.12));
+  border-color: rgba(255, 216, 137, 0.6);
+  color: #ffe3ba;
+  box-shadow: 0 16px 36px rgba(255, 157, 124, 0.25);
+}
+
 #message {
-  margin-top: 20px;
+  margin-top: 16px;
   padding: 14px 16px;
   border-radius: 14px;
   text-align: center;

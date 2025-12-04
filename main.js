@@ -1,4 +1,6 @@
 const header = document.getElementById("site-header");
+const DEFAULT_API_BASE_URL = "https://vantage-backend-api.onrender.com/api";
+const API_BASE_URL = (window.APP_CONFIG && window.APP_CONFIG.backendApiBase) || DEFAULT_API_BASE_URL;
 const navToggle = document.getElementById("nav-toggle");
 const navLinks = document.getElementById("nav-links");
 
@@ -68,9 +70,6 @@ const submitContactForm = async (event) => {
   };
 
   try {
-    const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-    const API_BASE_URL = isLocal ? 'http://127.0.0.1:5000/api' : "https://vantage-backend-api.onrender.com/api";
-
     const response = await fetch(`${API_BASE_URL}/contact`, {
       method: "POST",
       headers: {
@@ -107,11 +106,9 @@ if (contactForm && contactMessageDiv) {
 
 // --- Dynamic UI based on Auth State ---
 const updateUIBasedOnAuthState = async () => {
-  const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-  const API_BASE_URL = isLocal ? 'http://127.0.0.1:5000/api' : 'https://vantage-backend-api.onrender.com/api';
-  
   const navLinksContainer = document.getElementById("nav-links");
   const launchConsoleBtn = document.querySelector('.hero-actions a.btn--primary');
+  const logoutLink = document.querySelector('.nav__logout-btn');
 
   try {
     const response = await fetch(`${API_BASE_URL}/check_session`, {
@@ -120,28 +117,21 @@ const updateUIBasedOnAuthState = async () => {
     });
     const result = await response.json();
 
-    // Clear any existing dynamic links to prevent duplication
-    const existingDashboardLink = navLinksContainer.querySelector('a[href="dashboard.html"]');
-    if (existingDashboardLink) existingDashboardLink.remove();
-
     if (result.logged_in) {
       // --- USER IS LOGGED IN ---
-      // Update Launch Console button
       if (launchConsoleBtn) launchConsoleBtn.href = "dashboard.html";
+      if (logoutLink) logoutLink.style.display = "inline-flex";
 
     } else {
       // --- USER IS LOGGED OUT ---
-      // Ensure no Dashboard link is present
-      const dashboardLink = navLinksContainer.querySelector('a[href="dashboard.html"]');
-      if (dashboardLink) dashboardLink.remove();
-
-      // Update Launch Console button
       if (launchConsoleBtn) launchConsoleBtn.href = "login.html";
+      if (logoutLink) logoutLink.style.display = "none";
     }
   } catch (error) {
     console.error("Error updating UI based on auth state:", error);
     // Fallback to default logged-out state
     if (launchConsoleBtn) launchConsoleBtn.href = "login.html";
+    if (logoutLink) logoutLink.style.display = "none";
   }
 };
 

@@ -9,6 +9,9 @@ from flask import Blueprint, request, jsonify, session
 from functools import wraps
 from ..utils import is_valid_host
 from ..services import domain_service
+from ..services.assistant_service import DashboardAssistant
+from ..services.guidance_service import DiagnosticGuidanceService
+import traceback
 
 main_bp = Blueprint('main', __name__, url_prefix='/api')
 
@@ -99,8 +102,73 @@ def domain_research():
                 results[check] = {"error": f"An unexpected error occurred during {check}: {e}"}
         else:
             results[check] = {"error": "unknown check"}
-    
+
     return jsonify(results), 200
+
+
+@main_bp.route('/tool-guidance', methods=['GET'])
+@login_required
+def tool_guidance():
+    tool = request.args.get("tool")
+    if not tool:
+        return jsonify({"error": "Please specify a tool query parameter."}), 400
+
+    guidance = DiagnosticGuidanceService().get_guidance(tool)
+    return jsonify(guidance), 200
+
+
+@main_bp.route('/assistant', methods=['POST'])
+@login_required
+def assistant():
+    """
+    Provides conversational help for dashboard tools.
+    """
+    data = request.get_json() or {}
+    question = data.get("question")
+    if not question:
+        return jsonify({"error": "Question text is required."}), 400
+
+    assistant = DashboardAssistant()
+    response = assistant.answer(question, tool_hint=data.get("tool"))
+
+    history = session.get("assistant_history", [])
+    history.append({
+        "question": question,
+        "answer": response.get("answer"),
+        "tool": response.get("tool"),
+    })
+    session["assistant_history"] = history[-10:]
+    response["history"] = session["assistant_history"]
+
+    return jsonify(response), 200
+
+
+@main_bp.route('/assistant/status', methods=['GET'])
+@login_required
+def assistant_status():
+    """
+    Debug endpoint to check Gemini assistant readiness.
+    """
+    try:
+        assistant = DashboardAssistant()
+        configured = bool(assistant.gemini_api_key)
+        test_result = None
+        if configured:
+            test = assistant._call_gemini("Say hello from Vantage assistant.", tool=None)
+            if test and test.get("answer"):
+                test_result = "ok"
+            else:
+                test_result = "failed"
+        return jsonify({
+            "gemini_configured": configured,
+            "model": assistant.gemini_model if configured else None,
+            "test_call": test_result,
+        }), 200
+    except Exception:
+        return jsonify({
+            "gemini_configured": False,
+            "error": "status check failed",
+        }), 500
 
 @main_bp.route('/whois', methods=['POST'])
 @login_required

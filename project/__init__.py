@@ -19,6 +19,7 @@ from .extensions import db, bcrypt, limiter
 from .routes.auth import auth_bp
 from .routes.main import main_bp
 from .routes.feedback import feedback_bp
+from .services.assistant_service import DashboardAssistant
 
 def create_app(config_class=Config):
     """
@@ -47,10 +48,9 @@ def create_app(config_class=Config):
     # Load configuration from the specified config object
     app.config.from_object(config_class)
 
-    # Force SQLite for local development to avoid environment issues
+    # Ensure the instance folder exists for SQLite defaults
     instance_path = os.path.join(os.path.dirname(app.root_path), 'instance')
     os.makedirs(instance_path, exist_ok=True)
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(instance_path, 'database.db')}"
 
     # --- Initialize extensions with the app ---
     db.init_app(app)
@@ -67,5 +67,15 @@ def create_app(config_class=Config):
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(feedback_bp)
+
+    # --- Log assistant backend availability ---
+    try:
+        assistant = DashboardAssistant()
+        if assistant.gemini_api_key:
+            app.logger.info(f"Assistant Gemini configured (model={assistant.gemini_model})")
+        else:
+            app.logger.info("Assistant Gemini not configured; using heuristic responses.")
+    except Exception:
+        app.logger.warning("Assistant initialization check failed", exc_info=True)
 
     return app

@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-  const API_BASE_URL = isLocal ? 'http://127.0.0.1:5000/api' : 'https://vantage-backend-api.onrender.com/api';
+  const DEFAULT_API_BASE_URL = 'https://vantage-backend-api.onrender.com/api';
+  const API_BASE_URL = (window.APP_CONFIG && window.APP_CONFIG.backendApiBase) || DEFAULT_API_BASE_URL;
 
   // --- Authentication Check ---
   const checkAuth = async () => {
@@ -59,6 +59,80 @@ document.addEventListener("DOMContentLoaded", () => {
     setActiveTab(tabs[0]);
   }
 
+
+  const navProfileLink = document.querySelector('.nav__profile-link');
+  const profileSection = document.getElementById('profile-section');
+  if (navProfileLink && profileSection) {
+    navProfileLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      // Use location hash for consistent scrolling even if JS fails
+      window.location.hash = "#profile-section";
+      profileSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  // --- Assistant widget ---
+  const assistantToggle = document.getElementById("assistant-toggle");
+  const assistantPanel = document.getElementById("assistant-panel");
+  const assistantClose = document.getElementById("assistant-close");
+  const assistantForm = document.getElementById("assistant-form");
+  const assistantInput = document.getElementById("assistant-input");
+  const assistantMessages = document.getElementById("assistant-messages");
+
+  const renderAssistantMessage = (role, text) => {
+    if (!assistantMessages) return;
+    const div = document.createElement("div");
+    div.className = `assistant-message ${role}`;
+    div.textContent = text;
+    assistantMessages.appendChild(div);
+    assistantMessages.scrollTop = assistantMessages.scrollHeight;
+  };
+
+  const toggleAssistant = (open) => {
+    if (!assistantPanel) return;
+    assistantPanel.classList.toggle("is-open", open);
+    if (open && assistantInput) {
+      setTimeout(() => assistantInput.focus(), 150);
+    }
+  };
+
+  if (assistantToggle && assistantPanel) {
+    assistantToggle.addEventListener("click", () => {
+      const willOpen = !assistantPanel.classList.contains("is-open");
+      toggleAssistant(willOpen);
+    });
+  }
+  if (assistantClose) {
+    assistantClose.addEventListener("click", () => toggleAssistant(false));
+  }
+
+  if (assistantForm && assistantInput) {
+    assistantForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const question = assistantInput.value.trim();
+      if (!question) return;
+      renderAssistantMessage("user", question);
+      assistantInput.value = "";
+      try {
+        const response = await fetch(`${API_BASE_URL}/assistant`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question }),
+        });
+        if (response.status === 401) {
+          window.location.href = "login.html";
+          return;
+        }
+        const data = await response.json().catch(() => ({}));
+        renderAssistantMessage("bot", data.answer || "I can guide you through the tools—try asking about WHOIS or DNS.");
+      } catch (error) {
+        console.error("Assistant error:", error);
+        renderAssistantMessage("bot", "Network issue. Please try again.");
+      }
+    });
+    renderAssistantMessage("bot", "Hi! Ask me about WHOIS, DNS, GeoIP, port scan, or speed tests.");
+  }
   // --- Generic Form Handler ---
   const handleFormSubmit = async (form, resultsContainer) => {
     const submitButton = form.querySelector('button[type="submit"]');
@@ -244,6 +318,44 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => errorElement.remove(), 500);
       }
     }, 5000);
+  }
+
+  // --- Profile actions (front-end only) ---
+  const profilePasswordForm = document.getElementById("profile-password-form");
+  const profilePasswordMsg = document.getElementById("profile-password-message");
+  if (profilePasswordForm && profilePasswordMsg) {
+    profilePasswordForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      profilePasswordMsg.textContent = "";
+      const email = document.getElementById("profile-password-email")?.value?.trim();
+      if (!email) {
+        profilePasswordMsg.textContent = "Enter your email to request a reset OTP.";
+        profilePasswordMsg.className = "inline-message error";
+        return;
+      }
+      profilePasswordMsg.textContent = "Sending reset OTP…";
+      profilePasswordMsg.className = "inline-message";
+      try {
+        const response = await fetch(`${API_BASE_URL}/forgot-password`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (response.ok) {
+          profilePasswordMsg.textContent = data.message || "Check your email for the OTP.";
+          profilePasswordMsg.className = "inline-message success";
+        } else {
+          profilePasswordMsg.textContent = data.message || "Unable to send reset OTP.";
+          profilePasswordMsg.className = "inline-message error";
+        }
+      } catch (error) {
+        console.error("Profile password reset error:", error);
+        profilePasswordMsg.textContent = "Network error while sending reset OTP.";
+        profilePasswordMsg.className = "inline-message error";
+      }
+    });
   }
 
   // --- GSAP Entry Animations ---

@@ -14,6 +14,17 @@ from ..services import otp_service, email_service
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api')
 
+
+def _to_utc(dt):
+    """
+    Normalize a datetime to a timezone-aware UTC datetime to avoid naive vs aware comparison errors.
+    """
+    if dt is None:
+        return None
+    if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
 @auth_bp.route('/signup', methods=['POST'])
 def signup():
     """
@@ -23,13 +34,32 @@ def signup():
         session.clear()
         data = request.get_json()
         email = data.get("email")
+        firstname = data.get("firstname")
+        lastname = data.get("lastname")
+        username = data.get("username")
+        phone = data.get("phone")
 
         if not email or not data.get("password"):
             return jsonify({"message": "Email and password are required!"}), 400
 
-        if User.query.filter_by(email=email).first():
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            if not existing_user.is_verified:
+                otp = otp_service.generate_otp()
+                existing_user.otp_hash = otp_service.hash_otp(otp)
+                existing_user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
+                db.session.commit()
+                current_app.logger.info(f"Resent OTP to unverified user: {email}")
+                threading.Thread(target=email_service.send_otp_email, args=(existing_user.email, otp)).start()
+                return jsonify({
+                    "message": "Account pending verification. A new OTP has been sent to your email."
+                }), 200
             current_app.logger.warning(f"Signup attempt for existing email: {email}")
             return jsonify({"message": "User with this email already exists!"}), 409
+
+        if User.query.filter_by(username=username).first():
+            current_app.logger.warning(f"Signup attempt for existing username: {username}")
+            return jsonify({"message": "User with this username already exists!"}), 409
 
         hashed_password = bcrypt.generate_password_hash(data["password"]).decode("utf-8")
         
@@ -38,6 +68,10 @@ def signup():
         otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
 
         new_user = User(
+            username=username,
+            firstname=firstname,
+            lastname=lastname,
+            phone=phone,
             email=email,
             password_hash=hashed_password,
             is_verified=False,
@@ -76,7 +110,8 @@ def verify_otp():
     if user.is_verified:
         return jsonify({"message": "Account already verified."}), 200
 
-    if user.otp_expiry < datetime.now(timezone.utc):
+    expiry = _to_utc(user.otp_expiry)
+    if not expiry or expiry < datetime.now(timezone.utc):
         current_app.logger.warning(f"Expired OTP attempt for user: {email}")
         return jsonify({"message": "OTP has expired."}), 400
 
@@ -93,25 +128,69 @@ def verify_otp():
     return jsonify({"message": "Account verified successfully! You can now log in."}), 200
 
 
+@auth_bp.route('/resend-otp', methods=['POST'])
+def resend_otp():
+    """
+    Resends a verification OTP for an unverified user.
+    """
+    data = request.get_json() or {}
+    email = data.get("email")
+    if not email:
+        return jsonify({"message": "Email is required."}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        current_app.logger.info(f"OTP resend requested for non-existent user: {email}")
+        return jsonify({"message": "If an account exists, a new OTP has been sent."}), 200
+
+    if user.is_verified:
+        return jsonify({"message": "Account already verified. You can log in."}), 200
+
+    otp = otp_service.generate_otp()
+    user.otp_hash = otp_service.hash_otp(otp)
+    user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
+    db.session.commit()
+
+    current_app.logger.info(f"Resent verification OTP to user: {email}")
+    threading.Thread(target=email_service.send_otp_email, args=(user.email, otp)).start()
+
+    return jsonify({"message": "A new OTP has been sent to your email."}), 200
+
+
 @auth_bp.route('/login', methods=['POST'])
 def login():
     """
     Authenticates a user and creates a session.
     """
     data = request.get_json()
-    email = data.get("email")
-    user = User.query.filter_by(email=email).first()
+    identifier = data.get("login_identifier") or data.get("email")
+    user = None
+    if identifier:
+        user = User.query.filter_by(email=identifier).first()
+        if not user:
+            user = User.query.filter_by(username=identifier).first()
+    if not identifier or not data.get("password"):
+        return jsonify({"message": "Email (or username) and password are required."}), 400
 
     if not user or not bcrypt.check_password_hash(user.password_hash, data.get("password")):
-        current_app.logger.warning(f"Failed login attempt for user: {email}")
+        current_app.logger.warning(f"Failed login attempt for user: {identifier}")
         return jsonify({"message": "Invalid email or password"}), 401
 
     if not user.is_verified:
-        current_app.logger.warning(f"Login attempt by unverified user: {email}")
-        return jsonify({"message": "Account not verified. Please check your email for an OTP to verify your account."}), 403
+        otp = otp_service.generate_otp()
+        user.otp_hash = otp_service.hash_otp(otp)
+        user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
+        db.session.commit()
+        threading.Thread(target=email_service.send_otp_email, args=(user.email, otp)).start()
+        current_app.logger.warning(f"Login attempt by unverified user: {user.email}. OTP resent.")
+        return jsonify({
+            "message": "Account not verified. A new OTP has been sent to your email.",
+            "email": user.email,
+            "action": "verify"
+        }), 200
 
     session["user_id"] = str(user.id)
-    current_app.logger.info(f"User logged in successfully: {email}")
+    current_app.logger.info(f"User logged in successfully: {user.email}")
     return jsonify({"message": "Login successful!", "user_id": user.id}), 200
 
 
@@ -178,7 +257,8 @@ def reset_password():
         current_app.logger.warning(f"Password reset attempt for non-existent user: {email}")
         return jsonify({"message": "Invalid email or OTP."}), 400
 
-    if not user.otp_expiry or user.otp_expiry < datetime.now(timezone.utc):
+    expiry = _to_utc(user.otp_expiry)
+    if not expiry or expiry < datetime.now(timezone.utc):
         current_app.logger.warning(f"Expired password reset OTP for user: {email}")
         return jsonify({"message": "OTP has expired."}), 400
 

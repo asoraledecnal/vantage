@@ -11,20 +11,28 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Configuration ---
-  const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-  const BACKEND_URL = isLocal ? "http://127.0.0.1:5000" : "https://vantage-backend-api.onrender.com" ;
- 
+  const DEFAULT_BACKEND_URL = "https://vantage-backend-api.onrender.com";
+  const BACKEND_URL = (window.APP_CONFIG && window.APP_CONFIG.backendUrl) || DEFAULT_BACKEND_URL;
   const signupForm = document.getElementById("signup-form")
   const messageDiv = document.getElementById("message")
 
+  const redirectToOtp = (email) => {
+    const target = `otp_verification.html?mode=verify&email=${encodeURIComponent(email)}`;
+    console.log("Redirecting to OTP verification at:", target);
+    window.location.assign(target);
+  };
+
   if (signupForm) {
     signupForm.addEventListener("submit", async (event) => {
-      console.log("Form submission listener started...");
       event.preventDefault()
       console.log("event.preventDefault() called...");
 
       const email = signupForm.querySelector("#email").value
       const password = signupForm.querySelector("#password").value
+      const firstname = signupForm.querySelector("#firstname").value
+      const lastname = signupForm.querySelector("#lastname").value
+      const username = signupForm.querySelector("#username").value
+      const phone = signupForm.querySelector("#phone").value
 
       if (messageDiv) {
         messageDiv.textContent = ""
@@ -38,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email, password, firstname, lastname, username, phone }),
         })
 
         const result = await response.json()
@@ -51,10 +59,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (response.ok) {
           if (messageDiv) messageDiv.className = "message success"
           console.log("Signup successful, redirecting to OTP page...");
-          // Redirect to the OTP verification page on success, passing email as a query param
-          setTimeout(() => {
-            window.location.href = `verify_otp.html?email=${encodeURIComponent(email)}`;
-          }, 2000);
+          // Cache profile fields locally so the dashboard can prefill them.
+          const profileCache = { email, firstname, lastname, username, phone };
+          try {
+            localStorage.setItem("vantage_profile_cache", JSON.stringify(profileCache));
+          } catch (e) {
+            console.warn("Unable to cache profile data:", e);
+          }
+          redirectToOtp(email);
         } else {
           if (messageDiv) messageDiv.className = "message error"
         }

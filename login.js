@@ -11,11 +11,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }                                                                                                                                       
                                                                                                                                           
   // --- Configuration ---                                                                                                                
-  const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';                                   
-  const BACKEND_URL = isLocal ? "http://127.0.0.1:5000" : "https://vantage-backend-api.onrender.com";                                     
+  const DEFAULT_BACKEND_URL = "https://vantage-backend-api.onrender.com";
+  const BACKEND_URL = (window.APP_CONFIG && window.APP_CONFIG.backendUrl) || DEFAULT_BACKEND_URL;
                                                                                                                                           
   const loginForm = document.getElementById("login-form")                                                                                 
   const messageDiv = document.getElementById("message")                                                                                   
+
+  const redirectToOtp = (email) => {
+    const target = `otp_verification.html?mode=verify&email=${encodeURIComponent(email)}`;
+    console.log("Redirecting to OTP verification at:", target);
+    window.location.assign(target);
+  };
                                                                                                                                           
   if (loginForm) {                                                                                                                        
     loginForm.addEventListener("submit", async (event) => {                                                                               
@@ -46,12 +52,23 @@ document.addEventListener("DOMContentLoaded", () => {
           messageDiv.style.display = "block"                                                                                              
         }                                                                                                                                 
                                                                                                                                           
-        if (response.ok) {                                                                                                                
-          if (messageDiv) messageDiv.className = "message success"                                                                        
-          window.location.href = "dashboard.html"                                                                                         
-        } else {                                                                                                                          
-          if (messageDiv) messageDiv.className = "message error"                                                                          
-        }                                                                                                                                 
+        if (result.action === "verify" && result.email) {
+          if (messageDiv) messageDiv.className = "message success"
+          redirectToOtp(result.email)
+          return;
+        }
+
+        if (response.ok) {
+          if (messageDiv) messageDiv.className = "message success"
+          window.location.href = "dashboard.html"
+        } else {
+          if (result.action === "verify" && result.email) {
+            if (messageDiv) messageDiv.className = "message success"
+            redirectToOtp(result.email)
+          } else if (messageDiv) {
+            messageDiv.className = "message error"
+          }
+        }
       } catch (error) {                                                                                                                   
         console.error("Login request error:", error)                                                                                      
         if (messageDiv) {                                                                                                                 

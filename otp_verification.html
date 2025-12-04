@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification - Vantage</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body class="auth-body">
+    <div class="auth-texture auth-texture--radial" aria-hidden="true"></div>
+    <main class="auth-shell">
+        <section class="auth-hero">
+            <p class="auth-eyebrow">Action Required</p>
+            <h1 id="page-title">Verify your identity</h1>
+            <p class="auth-lede">
+                An OTP code has been sent to <strong id="user-email-display"></strong>.
+                Enter it below to continue. This form handles both account verification and password resets.
+            </p>
+        </section>
+        <section class="auth-panel">
+            <form id="otp-verification-form" class="auth-form">
+                <div class="form-header">
+                    <h2>Enter One-Time Password</h2>
+                    <p>Check your inbox for the 6-digit OTP.</p>
+                </div>
+                <div class="form-group">
+                    <label for="otp">One-Time Password</label>
+                    <input type="text" id="otp" name="otp" placeholder="123456" required pattern="\d{6}" autocomplete="one-time-code">
+                </div>
+                <div id="password-group" class="form-group">
+                    <label for="new-password">New Password</label>
+                    <input type="password" id="new-password" name="new_password" placeholder="••••••••" autocomplete="new-password">
+                </div>
+                <div id="confirm-password-group" class="form-group">
+                    <label for="confirm-password">Confirm New Password</label>
+                    <input type="password" id="confirm-password" name="confirm_password" placeholder="••••••••" autocomplete="new-password">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" id="submit-button">Submit</button>
+                    <button type="button" id="resend-otp-button" class="secondary-action">Resend OTP</button>
+                </div>
+                <div id="message" class="message"></div>
+            </form>
+        </section>
+    </main>
+
+    <script src="console_buffer.js" defer></script>
+    <script src="backend-config.js" defer></script>
+    <script src="otp_verification.js" type="module" defer></script>
+</body>
+</html>

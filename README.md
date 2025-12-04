@@ -9,12 +9,12 @@ This project is built with a focus on clean architecture, maintainability, and e
 ## 2. Features
 
 ### Core Application
-- **RESTful API:** A robust backend API built with Python and the Flask framework.
-- **Asynchronous Email:** The feedback submission endpoint uses background threading to send email notifications via the SendGrid API, ensuring non-blocking, fast responses.
-- **Secure Authentication:** A complete user management system with secure password hashing (Bcrypt) and session-based authentication.
-- **Protected Endpoints:** All diagnostic tool endpoints require a valid user session.
-- **Input Validation:** Strict validation is implemented for all user-provided data, such as hostnames and ports, to prevent common vulnerabilities.
-- **Rate Limiting:** Endpoints are protected against abuse with IP-based rate limiting.
+- **RESTful API:** Python/Flask backend with clean separation between routes, services, and models.
+- **Asynchronous Email:** Feedback submission uses background threading to send SendGrid notifications without blocking the UI.
+- **Secure Authentication:** Session-based login with bcrypt-hashed passwords, OTP verification, and logout endpoints.
+- **OTP-PASSWORD RESET:** The `/api/forgot-password` and `/api/reset-password` routes use 6-digit numeric OTPs (hashed+salted, 5-minute expiry) to avoid link-based enumeration. Resetting a password invalidates any active OTP and clears the session.
+- **Protected Diagnostics:** All network tools require an authenticated session; requests are rate-limited and validated for host/port safety.
+- **Dashboard Assistant:** `/api/assistant` provides conversational guidance for dashboard tools, returning tips and example requests to help users navigate the UI.
 
 ### Diagnostic Tools
 - **WHOIS Lookup:** Retrieves domain registration information.
@@ -22,6 +22,8 @@ This project is built with a focus on clean architecture, maintainability, and e
 - **IP Geolocation:** Provides geographical information for a given domain or IP address.
 - **Port Scanner:** Checks the status of a specific port on a host.
 - **Network Speed Test:** Measures server-side network performance (download, upload, ping).
+- **Domain Research:** `/api/domain` bundles the above checks and lets callers specify a subset via the `fields` array.
+- **Guidance Endpoint:** `/api/tool-guidance?tool=<name>` returns instructions per tool (usage tips, example payloads) powered by `project/services/guidance_service.py`, as documented in AGENTS.md.
 
 ## 3. Technical Stack
 
@@ -47,16 +49,19 @@ The project follows a standard package-based structure to ensure a clean separat
 /vantage
 |-- /project/
 |   |-- /routes/
-|   |   |-- auth.py         # Authentication routes (signup, login, etc.)
+|   |   |-- auth.py         # Authentication, signup/login/logout, OTP flows
 |   |   |-- feedback.py     # Feedback submission route
-|   |   `-- main.py         # Core diagnostic tool routes
+|   |   `-- main.py         # Diagnostic tool routes + tool-guidance & assistant endpoints
 |   |-- /services/
-|   |   |-- domain_service.py # Business logic for domain tools
-|   |   `-- email_service.py  # Logic for sending emails via SendGrid
+|   |   |-- domain_service.py # Business logic for WHOIS/DNS/geoip/port/speed
+|   |   |-- email_service.py  # SendGrid helpers & threaded sending
+|   |   |-- otp_service.py    # OTP generation, hashing, verification helpers
+|   |   |-- guidance_service.py # Returns per-tool guidance payloads
+|   |   `-- assistant_service.py # Interactive dashboard assistant responses
 |   |-- __init__.py         # Application factory (create_app)
-|   |-- config.py         # Configuration loading
-|   |-- models.py         # SQLAlchemy database models
-|   `-- utils.py          # Utility functions (e.g., host validator)
+|   |-- config.py           # Config loading + DATABASE_URL normalization
+|   |-- models.py           # SQLAlchemy database models
+|   `-- utils.py            # Utility validators (host/IP sanitizers, etc.)
 |
 |-- .env                  # Local environment variables (GIT-IGNORED)
 |-- .gitignore
@@ -64,6 +69,7 @@ The project follows a standard package-based structure to ensure a clean separat
 |-- Dockerfile
 |-- README.md             # This file
 |-- requirements.txt
+|-- otp_verification.html # Unified OTP verification/reset page
 `-- run.py                # Application entry point
 ```
 
@@ -118,11 +124,10 @@ The project follows a standard package-based structure to ensure a clean separat
     ```
 
 5.  **Initialize the Database:**
-    Open a terminal with the virtual environment activated and run the Flask shell:
     ```bash
     flask shell
     ```
-    In the Python shell that opens, create the database tables:
+    Then inside the shell:
     ```python
     from project.models import db
     db.create_all()
@@ -131,11 +136,20 @@ The project follows a standard package-based structure to ensure a clean separat
 
 ### Running the Application Locally
 
-With your virtual environment activated, run the application from the root directory:
 ```bash
 python run.py
 ```
-The backend server will start on `http://127.0.0.1:5000`.
+The backend will listen on `http://127.0.0.1:5000`. After logging in (or calling `/api/signup` + OTP verification), manually test:
+1. `/api/login` – confirm session cookie is issued (if the account exists but is unverified the app will resend an OTP and redirect to `otp_verification.html?mode=verify`).
+2. `/api/domain` – try combinations of WHOIS/DNS/port checks via `fields`.
+3. `/api/tool-guidance?tool=whois` – verify the guidance payload for each tool.
+4. `/api/assistant` – send `{"question":"What does the DNS tool do?"}` to receive interactive tips and endpoint examples.
+5. `/api/forgot-password` and `/api/reset-password` – ensure OTP flow works (check logs or email service).
+6. `otp_verification.html?mode=verify&email=<your-email>` (or `mode=reset`) – open the shared OTP page manually to confirm both banners and API calls behave as expected.
+
+> **Debug helper**: The new `console_buffer.js` script (loaded by login/signup/forgot_password/otp pages) keeps a rolling history of the last 100 console messages in localStorage and shows a little drawer in the bottom-right so you can see logs even after the page reloads. Use it to capture the OTP redirect URL or error responses.
+
+Use the Mongo-style guidance data to power helpers or UI tooltips; call `/api/tool-guidance` with valid `tool` query values (`whois`, `dns_records`, `ip_geolocation`, `port_scan`, `speed`, `domain`).
 
 ---
 

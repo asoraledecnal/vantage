@@ -37,7 +37,6 @@
         <a href="#home">Home</a>                                                                                                          
         <a href="#about">Team</a>                                                                                                         
         <a href="#contact">Feedback</a>                                                                                                   
-        <a href="login.html" class="nav__login-btn">Login</a>                                                                             
         <a href="#" class="nav__logout-btn" style="display: none;">Logout</a>                                                             
       </nav>                                                                                                                              
     </header>                                                                                                                             
@@ -52,7 +51,6 @@
             muted                                                                                                                         
             loop                                                                                                                          
             playsinline                                                                                                                   
-            poster="assets/vantage.jpg"                                                                                                   
           >                                                                                                                               
             <source src="assets/hero-loop.mp4" type="video/mp4" />                                                                        
             Your browser does not support the video tag.                                                                                  
@@ -104,7 +102,7 @@ to your entire network infrastructure.
           <div class="chapter-media media-card">                                                                                          
             <div class="media-frame">                                                                                                     
               <video autoplay muted loop playsinline poster="assets/signal-loop.png">                                                     
-                  <source src="assets/hero-loop.mp4" type="video/mp4" />                                                                  
+                  <source src="assets/signal-loop.png" alt="network" />                                                                  
               </video>                                                                                                                    
               <div class="media-gradient"></div>                                                                                          
             </div>                                                                                                                        
@@ -228,8 +226,9 @@ dIn"></a>
       <p>&copy; 2025 Vantage. Inspired by Corn Revolution, built for Surveillance</p>                                                     
     </footer>                                                                                                                             
                                                                                                                                           
-    <script src="https://unpkg.com/gsap@3/dist/gsap.min.js" defer></script>                                                               
-    <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js" defer></script>                                                      
-    <script src="main.js" defer></script>                                                                                                 
-  </body>                                                                                                                                 
+    <script src="https://unpkg.com/gsap@3/dist/gsap.min.js" defer></script>
+    <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js" defer></script>
+    <script src="backend-config.js" defer></script>
+    <script src="main.js" defer></script>
+  </body>
 </html>

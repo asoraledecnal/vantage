@@ -33,8 +33,8 @@
       </button>
       <nav class="nav__links" id="nav-links">
         <a href="index.html">Home</a>
-        <a href="login.html" class="nav__login-btn">Login</a>
-        <a href="#" id="logout-btn" class="nav__logout-btn" style="display: none;">Logout</a>
+        <a href="#profile-section" class="nav__profile-link">Profile</a>
+        <a href="#" id="logout-btn" class="nav__logout-btn">Logout</a>
       </nav>
     </header>
 
@@ -145,7 +145,98 @@
                 </div>
             </div>
         </section>
+        <div class="profile-backdrop"></div>
+        <section class="profile-flyout" id="profile-section">
+            <div class="profile-shell">
+                <div class="profile-header">
+                    <div>
+                        <p class="eyebrow">Control Center</p>
+                        <h2>Account Profile</h2>
+                        <p class="profile-desc">Manage personal details, trigger password resets, and see account status.</p>
+                    </div>
+                    <div class="profile-meta">
+                        <span class="badge badge-soft">Beta</span>
+                        <span class="badge badge-muted">UI only</span>
+                    </div>
+                </div>
+                <div class="profile-grid">
+                    <form id="profile-info-form" class="profile-card">
+                        <div class="card-header">
+                            <div>
+                                <div class="result-header">Profile</div>
+                                <p class="card-subtitle">Update your name and contact info.</p>
+                            </div>
+                            <span class="badge badge-soft">Coming soon</span>
+                        </div>
+                        <div class="form-row">
+                            <label for="profile-firstname">First Name</label>
+                            <input type="text" id="profile-firstname" name="firstname" placeholder="First name">
+                        </div>
+                        <div class="form-row">
+                            <label for="profile-lastname">Last Name</label>
+                            <input type="text" id="profile-lastname" name="lastname" placeholder="Last name">
+                        </div>
+                        <div class="form-row">
+                            <label for="profile-username">Username</label>
+                            <input type="text" id="profile-username" name="username" placeholder="username">
+                        </div>
+                        <div class="form-row">
+                            <label for="profile-phone">Phone</label>
+                            <input type="tel" id="profile-phone" name="phone" placeholder="+63...">
+                        </div>
+                        <button type="submit" class="ghost-button" disabled>Save changes</button>
+                        <p class="note-text">Profile editing endpoint not yet available.</p>
+                    </form>
+
+                    <form id="profile-password-form" class="profile-card">
+                        <div class="card-header">
+                            <div>
+                                <div class="result-header">Password</div>
+                                <p class="card-subtitle">Reset your password with a new OTP.</p>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <label for="profile-password-email">Email</label>
+                            <input type="email" id="profile-password-email" name="email" placeholder="you@example.com" required>
+                        </div>
+                        <button type="submit" class="cta-button">Send reset OTP</button>
+                        <div id="profile-password-message" class="inline-message"></div>
+                    </form>
+
+                    <form id="profile-delete-form" class="profile-card danger-card">
+                        <div class="card-header">
+                            <div>
+                                <div class="result-header">Delete Account</div>
+                                <p class="card-subtitle">Permanently remove your account data.</p>
+                            </div>
+                            <span class="badge badge-danger">Danger</span>
+                        </div>
+                        <p class="note-text">This operation is permanent. Account deletion API is not enabled yet.</p>
+                        <button type="submit" class="danger-button" disabled>Delete account</button>
+                    </form>
+                </div>
+            </div>
+        </section>
     </main>
+
+    <!-- Assistant Launcher -->
+    <button class="assistant-toggle" id="assistant-toggle" aria-label="Open assistant">
+        <span>✨</span>
+    </button>
+    <div class="assistant-panel" id="assistant-panel" aria-live="polite">
+        <div class="assistant-header">
+            <div>
+                <p class="assistant-eyebrow">Dashboard helper</p>
+                <h4>Vantage Assistant</h4>
+            </div>
+            <button class="assistant-close" id="assistant-close" aria-label="Close assistant">×</button>
+        </div>
+        <div class="assistant-body" id="assistant-messages"></div>
+        <form class="assistant-form" id="assistant-form">
+            <input type="text" id="assistant-input" name="question" placeholder="Ask about WHOIS, DNS, GeoIP…" autocomplete="off" required>
+            <button type="submit">Send</button>
+        </form>
+    </div>
 
     <footer class="site-footer">
       <p>&copy; 2025 Vantage. Network diagnostics for the modern web.</p>
@@ -153,6 +244,7 @@
 
     <script src="https://unpkg.com/gsap@3/dist/gsap.min.js" defer></script>
     <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js" defer></script>
+    <script src="backend-config.js" defer></script>
     <script src="dashboard.js" defer></script>
 </body>
 </html>

@@ -27,6 +27,9 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     username = db.Column(db.Text, unique=True, nullable=False)
+    firstname = db.Column(db.Text, nullable=True)
+    lastname = db.Column(db.Text, nullable=True)
+    phone = db.Column(db.Text, nullable=True)
     email = db.Column(db.Text, unique=True, nullable=False)
     password_hash = db.Column(db.Text, nullable=False)
     is_verified = db.Column(db.Boolean, default=False, nullable=False)

@@ -60,4 +60,8 @@ class Config:
     VERIFICATION_TOKEN_SALT = os.environ.get('VERIFICATION_TOKEN_SALT', 'email-verification-salt')
     FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:8080') # Default for local frontend
 
+    # Optional Gemini assistant integration
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+    GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash')
+
 # For potential future use, e.g., class DevelopmentConfig(Config): ...
