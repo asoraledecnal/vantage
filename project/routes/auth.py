@@ -220,7 +220,7 @@ def forgot_password():
     """
     Initiates the password reset process by sending an OTP to the user's email.
     """
-    data = request.get_json()
+    data = request.get_json() or {}
     email = data.get("email")
     if not email:
         return jsonify({"message": "Email is required."}), 400
@@ -246,10 +246,10 @@ def reset_password():
     """
     Resets the user's password using a valid OTP.
     """
-    data = request.get_json()
+    data = request.get_json() or {}
     email = data.get("email")
     required_fields = ["email", "otp", "new_password"]
-    if not all(field in data for field in required_fields):
+    if not all(field in data and data.get(field) for field in required_fields):
         return jsonify({"message": "Email, OTP, and new password are required."}), 400
 
     user = User.query.filter_by(email=email).first()
@@ -271,5 +271,8 @@ def reset_password():
     user.otp_expiry = None
     db.session.commit()
     current_app.logger.info(f"Password successfully reset for user: {email}")
+
+    # Invalidate any existing session after password reset for safety
+    session.clear()
 
     return jsonify({"message": "Password has been reset successfully."}), 200

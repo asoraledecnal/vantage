@@ -3,8 +3,8 @@ instance/
 venv/
 .env
 .venv/
-__pycache__/
 cookiejar.txt
-logsAGENTS.md
 logs/
 AGENTS.md
+choco
+psql
