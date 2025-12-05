@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Change Email - Vantage</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body class="auth-body">
+                                                                                                                                          
+    <div class="auth-texture auth-texture--radial" aria-hidden="true"></div>                                                              
+                                                                                                                                          
+    <main class="auth-shell">                                                                                                             
+        <section class="auth-hero">                                                                                                       
+            <p class="auth-eyebrow">Account Security</p>                                                                                  
+            <h1>Update your email address.</h1>                                                                                           
+            <p class="auth-lede">                                                                                                         
+                Enter your new email address and current password to securely change your account's primary email.                                                                                                                         
+            </p>                                                                                                                          
+            <ul class="auth-highlights">                                                                                                  
+                <li>Maintain account security</li>                                                                                        
+                <li>Receive important notifications</li>                                                                                  
+                <li>Keep your profile up-to-date</li>                                                                                     
+            </ul>                                                                                                                         
+        </section>                                                                                                                        
+                                                                                                                                          
+        <section class="auth-panel">                                                                                                      
+            <form id="change-email-form" class="auth-form">                                                                               
+                <div class="form-header">                                                                                                 
+                    <h2>Change Email</h2>                                                                                                 
+                    <p>Enter your new email and current password.</p>                                                                     
+                </div>                                                                                                                    
+                <div class="form-group">                                                                                                  
+                    <label for="new-email">New Email Address</label>                                                                     
+                    <input type="email" id="new-email" name="new_email" placeholder="your@new-email.com" required>                       
+                </div>                                                                                                                    
+                <div class="form-group">                                                                                                  
+                    <label for="current-password">Current Password</label>                                                                
+                    <input type="password" id="current-password" name="current_password" placeholder="••••••••" required>                  
+                </div>                                                                                                                    
+                <div class="form-actions">
+                    <button type="submit" id="change-email-submit">Update Email</button>
+                </div>
+                <div id="message"></div>
+                <a href="profile.html" class="back-btn">← Back to Profile</a>                                                             
+            </form>                                                                                                                       
+        </section>                                                                                                                        
+    </main>                                                                                                                               
+                                                                                                                                          
+    <script src="console_buffer.js" defer></script>
+    <script src="backend-config.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const changeEmailForm = document.getElementById('change-email-form');
+            const submitButton = document.getElementById('change-email-submit');
+            const newEmailInput = document.getElementById('new-email');
+            const currentPasswordInput = document.getElementById('current-password');
+            const messageDiv = document.getElementById('message');
+            const API_BASE_URL =
+              (window.APP_CONFIG && window.APP_CONFIG.backendApiBase) ||
+              `${window.location.origin}/api`;
+
+            if (!changeEmailForm || !messageDiv || !newEmailInput || !currentPasswordInput) {                                            
+                return;                                                                                                                   
+            }                                                                                                                             
+                                                                                                                                          
+            let isSubmitting = false;                                                                                                     
+                                                                                                                                          
+            const showMessage = (text, status) => {
+                messageDiv.textContent = text;                                                                                            
+                messageDiv.className = `message ${status}`;                                                                               
+                messageDiv.style.display = 'block';                                                                                       
+            };                                                                                                                            
+                                                                                                                                          
+            const hideMessage = () => {                                                                                                   
+                messageDiv.textContent = '';                                                                                              
+                messageDiv.style.display = 'none';                                                                                        
+                messageDiv.className = '';                                                                                                
+            };                                                                                                                            
+                                                                                                                                          
+            const handleSubmit = async (event) => {                                                                                       
+                if (event) {                                                                                                              
+                    event.preventDefault();                                                                                               
+                }                                                                                                                         
+                if (isSubmitting) {                                                                                                       
+                    return;                                                                                                               
+                }                                                                                                                         
+                                                                                                                                          
+                const new_email = newEmailInput.value.trim();                                                                             
+                const current_password = currentPasswordInput.value.trim();                                                               
+                                                                                                                                          
+                if (!new_email || !current_password) {                                                                                    
+                    showMessage('Both new email and current password are required.', 'error');                                            
+                    return;                                                                                                               
+                }                                                                                                                         
+                                                                                                                                          
+                hideMessage();                                                                                                            
+                isSubmitting = true;                                                                                                      
+                if (submitButton) {                                                                                                       
+                    submitButton.disabled = true;                                                                                         
+                }                                                                                                                         
+                                                                                                                                          
+                try {                                                                                                                     
+                    const response = await fetch(`${API_BASE_URL}/change-email`, { // Assuming this endpoint exists                     
+                        method: 'POST',                                                                                                   
+                        credentials: 'include',                                                                                           
+                        headers: { 'Content-Type': 'application/json' },                                                                  
+                        body: JSON.stringify({ new_email, current_password })                                                             
+                    });                                                                                                                   
+                                                                                                                                          
+                    const data = await response.json();                                                                                   
+                                                                                                                                          
+                    if (response.ok) {
+                        showMessage(data.message || 'Email updated successfully!', 'success');
+                        setTimeout(() => window.location.href = 'profile.html', 600);
+                    } else {
+                        showMessage(data.message || 'Unable to update email. Please try again.', 'error');
+                    }
+                } catch (error) {                                                                                                         
+                    console.error("Change email error:", error);                                                                          
+                    showMessage('A network error occurred. Please try again.', 'error');                                                  
+                } finally {                                                                                                               
+                    isSubmitting = false;                                                                                                 
+                    if (submitButton) {                                                                                                   
+                        submitButton.disabled = false;                                                                                         
+                    }                                                                                                                     
+                }                                                                                                                         
+            };                                                                                                                            
+                                                                                                                                          
+            changeEmailForm.addEventListener('submit', handleSubmit);                                                                     
+        });                                                                                                                               
+    </script>                                                                                                                             
+</body>                                                                                                                                   
+</html>

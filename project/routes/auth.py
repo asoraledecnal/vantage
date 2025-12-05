@@ -262,6 +262,84 @@ def forgot_password():
     # Always return a generic response to prevent account enumeration
     return jsonify({"message": "If an account with that email exists, a password reset OTP has been sent."}), 200
 
+
+@auth_bp.route('/change-email', methods=['POST'])
+def change_email():
+    """
+    Allows a logged-in user to change their email after confirming their current password.
+    """
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"message": "Unauthorized"}), 401
+    try:
+        user_uuid = uuid.UUID(user_id)
+    except (ValueError, TypeError):
+        return jsonify({"message": "Invalid session"}), 401
+
+    data = request.get_json(silent=True) or {}
+    new_email = (data.get("new_email") or "").strip()
+    current_password = (data.get("current_password") or "").strip()
+
+    if not new_email or not current_password:
+        return jsonify({"message": "New email and current password are required."}), 400
+
+    user = User.query.get(user_uuid)
+    if not user:
+        return jsonify({"message": "User not found."}), 404
+
+    # Verify password
+    if not bcrypt.check_password_hash(user.password_hash, current_password):
+        current_app.logger.warning("Change email failed: bad password for user %s", user.email)
+        return jsonify({"message": "Invalid credentials."}), 401
+
+    # Prevent duplicate emails (case-insensitive)
+    lowered_email = new_email.lower()
+    existing = User.query.filter(func.lower(User.email) == lowered_email, User.id != user.id).first()
+    if existing:
+        return jsonify({"message": "That email is already in use."}), 409
+
+    user.email = new_email
+    db.session.commit()
+    current_app.logger.info("User %s changed email to %s", user.username, new_email)
+    return jsonify({"message": "Email updated successfully.", "email": new_email}), 200
+
+
+@auth_bp.route('/change-password', methods=['POST'])
+def change_password():
+    """
+    Allows a logged-in user to change their password by supplying the current password.
+    """
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"message": "Unauthorized"}), 401
+    try:
+        user_uuid = uuid.UUID(user_id)
+    except (ValueError, TypeError):
+        return jsonify({"message": "Invalid session"}), 401
+
+    data = request.get_json(silent=True) or {}
+    current_password = (data.get("current_password") or "").strip()
+    new_password = (data.get("new_password") or "").strip()
+
+    if not current_password or not new_password:
+        return jsonify({"message": "Current password and new password are required."}), 400
+
+    user = User.query.get(user_uuid)
+    if not user:
+        return jsonify({"message": "User not found."}), 404
+
+    if not bcrypt.check_password_hash(user.password_hash, current_password):
+        current_app.logger.warning("Change password failed: bad password for user %s", user.email)
+        return jsonify({"message": "Current password is incorrect."}), 401
+
+    user.password_hash = bcrypt.generate_password_hash(new_password).decode("utf-8")
+    # Clear any pending OTP data when password is changed directly
+    user.otp_hash = None
+    user.otp_expiry = None
+    db.session.commit()
+    current_app.logger.info("User %s changed password", user.username)
+    return jsonify({"message": "Password updated successfully."}), 200
+
 @auth_bp.route('/reset-password', methods=['POST'])
 def reset_password():
     """

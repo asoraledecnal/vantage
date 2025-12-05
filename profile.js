@@ -1,11 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("Profile.js: DOMContentLoaded fired.");
+
   // --- Navigation Toggle ---
   const navToggle = document.getElementById("nav-toggle");
   const navLinks = document.getElementById("nav-links");
-
-  console.log("Profile.js: DOMContentLoaded fired.");
-  console.log("Profile.js: navToggle element:", navToggle);
-  console.log("Profile.js: navLinks element:", navLinks);
 
   if (navToggle && navLinks) {
     const closeNav = () => {
@@ -35,18 +33,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Authentication Check ---
   const checkAuth = async () => {
+    console.log("checkAuth started");
     try {
       const response = await fetch(`${API_BASE_URL}/check_session`, {
         method: "GET",
         credentials: "include",
       });
-      if (!response.ok) window.location.href = "login.html";
+      if (!response.ok) {
+        console.log("checkAuth failed, redirecting to login.html");
+        window.location.href = "login.html";
+      } else {
+        console.log("checkAuth successful");
+      }
     } catch (error) {
       console.error("Auth check error:", error);
       window.location.href = "login.html";
     }
   };
-  // checkAuth(); // Temporarily commented out for debugging menu issue
+  checkAuth();
 
   // --- Logout Button ---
   const logoutBtn = document.getElementById("logout-btn");
@@ -63,6 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function displayError(message) {
+    console.log("displayError called:", message);
     const errorContainer = document.getElementById("error-container");
     const errorElement = document.createElement("div");
     errorElement.className = "error-message";
@@ -77,15 +82,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 5000);
   }
 
-  // --- Profile Logic ---
-  const navProfileLink = document.querySelector('.nav__profile-link');
-  const profileSection = document.getElementById('profile-section');
-  const profileBackdrop = document.querySelector('.profile-backdrop');
-  const profileInfoForm = document.getElementById('profile-info-form');
-  const profileDeleteForm = document.getElementById('profile-delete-form');
+  let originalUserData = {}; // Store original user data to detect changes
 
+  const profileInfoForm = document.getElementById('profile-info-form');
+  const profileSaveBtn = document.getElementById('profile-save-btn');
+  const profileCancelBtn = document.getElementById('profile-cancel-btn');
+  const changePasswordBtn = document.getElementById('change-password-btn');
+  const changeEmailBtn = document.getElementById('change-email-btn');
+
+  const profileFields = ['profile-firstname', 'profile-lastname', 'profile-username', 'profile-phone'];
+
+  const formatName = (value = "") => {
+    return value
+      .split(" ")
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  };
 
   const fetchUserProfile = async () => {
+    console.log("fetchUserProfile started");
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {
         method: "GET",
@@ -93,11 +109,29 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (response.ok) {
         const userData = await response.json();
-        document.getElementById('profile-firstname').value = userData.firstname || '';
-        document.getElementById('profile-lastname').value = userData.lastname || '';
-        document.getElementById('profile-username').value = userData.username || '';
-        document.getElementById('profile-phone').value = userData.phone || '';
+        console.log("fetchUserProfile successful, userData:", userData);
+        const formattedData = {
+          ...userData,
+          firstname: formatName(userData.firstname || ""),
+          lastname: formatName(userData.lastname || ""),
+        };
+        originalUserData = { ...formattedData }; // Store a copy of original (formatted) data
+
+        profileFields.forEach(fieldId => {
+          const input = document.getElementById(fieldId);
+          if (input) {
+            const fieldName = fieldId.replace('profile-', '');
+            if (fieldName === 'firstname' || fieldName === 'lastname') {
+              input.value = formattedData[fieldName] || '';
+            } else {
+              input.value = formattedData[fieldName] || '';
+            }
+            input.addEventListener('input', checkFormChanges);
+          }
+        });
+        checkFormChanges(); // Set initial button state
       } else if (response.status === 401) {
+        console.log("fetchUserProfile 401, redirecting to login.html");
         window.location.href = "login.html";
       } else {
         console.error("Failed to fetch user profile:", response.status);
@@ -109,41 +143,61 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  // Function to check for changes and update button states
+  const checkFormChanges = () => {
+    let hasChanges = false;
+    profileFields.forEach(fieldId => {
+      const input = document.getElementById(fieldId);
+      if (input && originalUserData) {
+        const fieldName = fieldId.replace('profile-', '');
+        if (input.value !== (originalUserData[fieldName] || '')) {
+          hasChanges = true;
+        }
+      }
+    });
 
+    if (profileSaveBtn && profileCancelBtn) {
+      profileSaveBtn.disabled = !hasChanges;
+      profileCancelBtn.disabled = !hasChanges;
+    }
+    console.log("checkFormChanges executed, hasChanges:", hasChanges, "saveBtnDisabled:", profileSaveBtn.disabled);
+  };
 
   // On profile.html, the profile section is always visible, so fetch data on load
-  if (profileSection) {
-      fetchUserProfile();
-  }
-
+  fetchUserProfile();
 
   // --- Handle Profile Update Form Submission ---
   if (profileInfoForm) {
     profileInfoForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const firstname = document.getElementById('profile-firstname').value;
-      const lastname = document.getElementById('profile-lastname').value;
-      const username = document.getElementById('profile-username').value;
-      const phone = document.getElementById('profile-phone').value;
+      profileSaveBtn.disabled = true; // Disable to prevent double submission
+      profileCancelBtn.disabled = true;
+
+      const updatedData = {};
+      profileFields.forEach(fieldId => {
+        const input = document.getElementById(fieldId);
+        if (input) {
+          const fieldName = fieldId.replace('profile-', '');
+          if (fieldName === 'firstname' || fieldName === 'lastname') {
+            updatedData[fieldName] = formatName(input.value);
+          } else {
+            updatedData[fieldName] = input.value;
+          }
+        }
+      });
 
       try {
         const response = await fetch(`${API_BASE_URL}/profile`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ firstname, lastname, username, phone }),
+          body: JSON.stringify(updatedData),
         });
 
         const result = await response.json();
         if (response.ok) {
-          // Update message for user
-          const messageDiv = profileInfoForm.querySelector('.note-text'); // Or add a new message div
-          if (messageDiv) {
-            messageDiv.textContent = result.message;
-            messageDiv.style.color = 'var(--text-strong)'; // Green-ish success color
-          }
-          // Optionally re-fetch profile to ensure UI consistency
-          fetchUserProfile();
+          displaySuccess("Profile updated successfully!"); // New success message display
+          originalUserData = { ...updatedData }; // Update original data after successful save
         } else if (response.status === 401) {
           window.location.href = "login.html";
         } else {
@@ -152,11 +206,44 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (error) {
         console.error('Error updating profile:', error);
         displayError('Network error during profile update.');
+      } finally {
+        checkFormChanges(); // Re-check button state after API call
       }
     });
   }
 
+  // --- Handle Cancel Button ---
+  if (profileCancelBtn) {
+    profileCancelBtn.addEventListener('click', () => {
+      profileFields.forEach(fieldId => {
+        const input = document.getElementById(fieldId);
+        if (input && originalUserData) {
+          input.value = originalUserData[fieldId.replace('profile-', '')] || '';
+        }
+      });
+      checkFormChanges(); // Reset button states
+      console.log("Cancel button clicked, fields reverted.");
+    });
+  }
+
+  // --- Handle Change Password Button ---
+  if (changePasswordBtn) {
+    changePasswordBtn.addEventListener('click', () => {
+      console.log("Change Password button clicked, redirecting to change_password.html");
+      window.location.href = `change_password.html`;
+    });
+  }
+
+  // --- Handle Change Email Button ---
+  if (changeEmailBtn) {
+    changeEmailBtn.addEventListener('click', () => {
+      console.log("Change Email button clicked, redirecting to change_email.html");
+      window.location.href = `change_email.html`; // Placeholder for future implementation
+    });
+  }
+
   // --- Handle Account Delete Form Submission ---
+  const profileDeleteForm = document.getElementById('profile-delete-form');
   if (profileDeleteForm) {
     profileDeleteForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -186,56 +273,37 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- Profile actions (front-end only) ---
-  const profilePasswordForm = document.getElementById("profile-password-form");
-  const profilePasswordMsg = document.getElementById("profile-password-message");
-  if (profilePasswordForm && profilePasswordMsg) {
-    profilePasswordForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      profilePasswordMsg.textContent = "";
-      profilePasswordMsg.style.display = "none"; // Hide message initially
-
-      const email = document.getElementById("profile-password-email")?.value?.trim();
-      if (!email) {
-        profilePasswordMsg.textContent = "Enter your email to request a reset OTP.";
-        profilePasswordMsg.className = "inline-message error";
-        profilePasswordMsg.style.display = "block"; // Show message
-        return;
-      }
-      profilePasswordMsg.textContent = "Sending reset OTP…";
-      profilePasswordMsg.className = "inline-message"; // Reset to default inline-message class
-      profilePasswordMsg.style.display = "block"; // Show message
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/forgot-password`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        });
-        const data = await response.json().catch(() => ({}));
-        if (response.ok) {
-          profilePasswordMsg.textContent = data.message || "Check your email for the OTP.";
-          profilePasswordMsg.className = "inline-message success";
-        } else {
-          profilePasswordMsg.textContent = data.message || "Unable to send reset OTP.";
-          profilePasswordMsg.className = "inline-message error";
-        }
-        profilePasswordMsg.style.display = "block"; // Ensure message is visible after API call
-      } catch (error) {
-        console.error("Profile password reset error:", error);
-        profilePasswordMsg.textContent = "Network error while sending reset OTP.";
-        profilePasswordMsg.className = "inline-message error";
-        profilePasswordMsg.style.display = "block"; // Ensure message is visible on network error
-      }
-    });
-  }
-
   // --- GSAP Entry Animations ---
+  const profileSection = document.getElementById('profile-section');
+  console.log("profileSection element:", profileSection);
   if (window.gsap && profileSection) {
+    console.log("GSAP animation for profileSection starting.");
     gsap.fromTo(profileSection,
       { opacity: 0, y: 50, visibility: "hidden" }, // From state
-      { opacity: 1, y: 0, visibility: "visible", duration: 1.2, ease: "power3.out" } // To state
+      { opacity: 1, y: 0, visibility: "visible", duration: 1.2, ease: "power3.out", onComplete: () => console.log("GSAP animation complete, profileSection now visible.") } // To state
     );
+  } else {
+    console.log("GSAP not loaded or profileSection not found. Ensuring visibility.");
+    if (profileSection) {
+      profileSection.style.opacity = 1;
+      profileSection.style.visibility = "visible";
+    }
+  }
+
+  // Helper for displaying success messages (similar to displayError)
+  function displaySuccess(message) {
+    console.log("displaySuccess called:", message);
+    const errorContainer = document.getElementById("error-container"); // Re-using error container
+    const successElement = document.createElement("div");
+    successElement.className = "success-message"; // Will need CSS for this
+    successElement.innerHTML = `<strong>Success:</strong> ${message}`;
+    errorContainer.innerHTML = ''; 
+    errorContainer.appendChild(successElement);
+    setTimeout(() => {
+      if (successElement) {
+        successElement.style.opacity = '0';
+        setTimeout(() => successElement.remove(), 500);
+      }
+    }, 5000);
   }
 });

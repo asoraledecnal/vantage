@@ -17,55 +17,83 @@ document.addEventListener("DOMContentLoaded", () => {
   const submitButton = document.getElementById("submit-button");
   const resendButton = document.getElementById("resend-otp-button");
 
+  const disableForm = () => {
+    form.querySelectorAll("input, button").forEach((el) => (el.disabled = true));
+  };
+
+  const tryResolveEmailFromSession = async () => {
+    try {
+      const res = await fetch(`${backendUrl}/api/profile`, {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.email || null;
+    } catch (err) {
+      console.warn("Failed to resolve email from session profile:", err);
+      return null;
+    }
+  };
+
   if (!form || !messageDiv || !emailDisplay || !submitButton) {
     return;
   }
 
-  const params = new URLSearchParams(window.location.search);
-  const email = params.get("email");
-  const mode = (params.get("mode") || FLOW_MODES.VERIFY).toLowerCase();
-  const flowMode = Object.values(FLOW_MODES).includes(mode) ? mode : FLOW_MODES.VERIFY;
-  let passwordStepUnlocked = false;
+  (async () => {
+    const params = new URLSearchParams(window.location.search);
+    const mode = (params.get("mode") || FLOW_MODES.VERIFY).toLowerCase();
+    const flowMode = Object.values(FLOW_MODES).includes(mode) ? mode : FLOW_MODES.VERIFY;
+    let email = params.get("email");
+    let passwordStepUnlocked = false;
 
-  if (!email) {
-    showMessage(messageDiv, "Email is missing from the URL. Start from signup or reset again.", "error");
-    form.querySelectorAll("input, button").forEach((el) => (el.disabled = true));
-    emailDisplay.textContent = "your email";
-    return;
-  }
+    // If email is missing from the URL, try to resolve it from the logged-in session profile.
+    if (!email) {
+      const resolved = await tryResolveEmailFromSession();
+      if (resolved) {
+        email = resolved;
+      }
+    }
 
-  emailDisplay.textContent = decodeURIComponent(email);
+    if (!email) {
+      showMessage(messageDiv, "Email is missing. Start from signup/reset or open this page from your logged-in account.", "error");
+      disableForm();
+      emailDisplay.textContent = "your email";
+      return;
+    }
 
-  const isResetFlow = flowMode === FLOW_MODES.RESET;
-  if (isResetFlow) {
-    // Start with OTP only; reveal password fields after OTP step
-    passwordGroup.style.display = "none";
-    confirmGroup.style.display = "none";
-    submitButton.textContent = "Verify OTP";
-    if (ledeReset) ledeReset.style.display = "inline";
-    if (ledeVerify) ledeVerify.style.display = "none";
-  } else {
-    passwordGroup.style.display = "none";
-    confirmGroup.style.display = "none";
-    submitButton.textContent = "Verify account";
-    if (ledeVerify) ledeVerify.style.display = "inline";
-    if (ledeReset) ledeReset.style.display = "none";
-  }
+    emailDisplay.textContent = decodeURIComponent(email);
 
-  const redirectToLogin = (reason = "Redirecting to login.html") => {
-    const target = "login.html";
-    console.log(`[OTP] ${reason} ${target}`);
-    // Try multiple navigation methods to avoid odd browser blocking.
-    window.location.href = target;
-    setTimeout(() => window.location.replace(target), 150);
-    setTimeout(() => (window.location.href = target), 500);
-  };
+    const isResetFlow = flowMode === FLOW_MODES.RESET;
+    if (isResetFlow) {
+      // Start with OTP only; reveal password fields after OTP step
+      passwordGroup.style.display = "none";
+      confirmGroup.style.display = "none";
+      submitButton.textContent = "Verify OTP";
+      if (ledeReset) ledeReset.style.display = "inline";
+      if (ledeVerify) ledeVerify.style.display = "none";
+    } else {
+      passwordGroup.style.display = "none";
+      confirmGroup.style.display = "none";
+      submitButton.textContent = "Verify account";
+      if (ledeVerify) ledeVerify.style.display = "inline";
+      if (ledeReset) ledeReset.style.display = "none";
+    }
 
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const otp = form.querySelector("#otp")?.value.trim();
-    const newPassword = form.querySelector("#new-password")?.value;
-    const confirmPassword = form.querySelector("#confirm-password")?.value;
+    const redirectToLogin = (reason = "Redirecting to login.html") => {
+      const target = "login.html";
+      console.log(`[OTP] ${reason} ${target}`);
+      // Try multiple navigation methods to avoid odd browser blocking.
+      window.location.href = target;
+      setTimeout(() => window.location.replace(target), 150);
+      setTimeout(() => (window.location.href = target), 500);
+    };
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const otp = form.querySelector("#otp")?.value.trim();
+      const newPassword = form.querySelector("#new-password")?.value;
+      const confirmPassword = form.querySelector("#confirm-password")?.value;
 
     if (!otp) {
       showMessage(messageDiv, "Please enter the OTP sent to your email.", "error");
@@ -93,88 +121,104 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    showMessage(messageDiv, "", "");
-    submitButton.disabled = true;
+      showMessage(messageDiv, "", "");
+      submitButton.disabled = true;
 
-    const endpoint = isResetFlow ? "reset-password" : "verify-otp";
-    const payload = {
-      email,
-      otp,
-      ...(isResetFlow ? { new_password: newPassword } : {}),
+      const endpoint = isResetFlow ? "reset-password" : "verify-otp";
+      const payload = {
+        email,
+        otp,
+        ...(isResetFlow ? { new_password: newPassword } : {}),
+      };
+
+      try {
+        const response = await fetch(`${backendUrl}/api/${endpoint}`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (response.ok) {
+          const successReason = isResetFlow ? "Password reset complete. Redirecting to:" : "Verification complete. Redirecting to:";
+          console.log("[OTP] Success response from server:", data);
+          showMessage(
+            messageDiv,
+            data.message ||
+              (isResetFlow ? "Password reset! Redirecting to login…" : "Account verified! Redirecting to login…"),
+            "success"
+          );
+          if (isResetFlow) {
+            redirectToLogin(successReason);
+            setTimeout(() => redirectToLogin("Ensuring redirect to login.html (fallback 1)"), 900);
+            setTimeout(() => redirectToLogin("Ensuring redirect to login.html (fallback 2)"), 2500);
+          } else {
+            // For account verification, return to profile if already logged in; otherwise go to login.
+            setTimeout(() => {
+              const target = "profile.html";
+              window.location.href = target;
+              setTimeout(() => window.location.replace(target), 200);
+            }, 400);
+          }
+        } else {
+          const errorText = data.message || `Request failed (${response.status})`;
+          console.error("OTP flow server error:", response.status, data);
+          showMessage(messageDiv, errorText, "error");
+        }
+      } catch (error) {
+        console.error("OTP flow error:", error);
+        const reason = error?.message || "Network error. Please try again.";
+        showMessage(messageDiv, reason, "error");
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+
+    const handleResend = async () => {
+      if (!email) return;
+      const endpoint = isResetFlow ? "forgot-password" : "resend-otp";
+      const payload = { email };
+      const button = resendButton;
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Sending…";
+      }
+      try {
+        const response = await fetch(`${backendUrl}/api/${endpoint}`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (response.ok) {
+          const msg = data.message || "A new OTP has been sent to your email.";
+          showMessage(messageDiv, msg, "success");
+        } else {
+          const err = data.message || `Request failed (${response.status})`;
+          showMessage(messageDiv, err, "error");
+        }
+      } catch (error) {
+        console.error("Resend OTP error:", error);
+        showMessage(messageDiv, "Network error while sending OTP. Please try again.", "error");
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = "Resend OTP";
+        }
+      }
     };
 
-    try {
-      const response = await fetch(`${backendUrl}/api/${endpoint}`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+    if (resendButton) {
+      resendButton.addEventListener("click", handleResend);
+    }
+
+    const backButton = document.getElementById("back-button");
+    if (backButton) {
+      backButton.addEventListener("click", () => {
+        history.back();
       });
-      const data = await response.json().catch(() => ({}));
-
-      if (response.ok) {
-        const successReason = isResetFlow ? "Password reset complete. Redirecting to:" : "Verification complete. Redirecting to:";
-        console.log("[OTP] Success response from server:", data);
-        showMessage(
-          messageDiv,
-          data.message ||
-            (isResetFlow ? "Password reset! Redirecting to login…" : "Account verified! Redirecting to login…"),
-          "success"
-        );
-        // Navigate immediately, then reinforce with fallbacks to avoid getting stuck.
-        redirectToLogin(successReason);
-        setTimeout(() => redirectToLogin("Ensuring redirect to login.html (fallback 1)"), 900);
-        setTimeout(() => redirectToLogin("Ensuring redirect to login.html (fallback 2)"), 2500);
-      } else {
-        const errorText = data.message || `Request failed (${response.status})`;
-        console.error("OTP flow server error:", response.status, data);
-        showMessage(messageDiv, errorText, "error");
-      }
-    } catch (error) {
-      console.error("OTP flow error:", error);
-      const reason = error?.message || "Network error. Please try again.";
-      showMessage(messageDiv, reason, "error");
-    } finally {
-      submitButton.disabled = false;
     }
-  });
-
-  const handleResend = async () => {
-    if (!email) return;
-    const endpoint = isResetFlow ? "forgot-password" : "resend-otp";
-    const payload = { email };
-    const button = resendButton;
-    if (button) {
-      button.disabled = true;
-      button.textContent = "Sending…";
-    }
-    try {
-      const response = await fetch(`${backendUrl}/api/${endpoint}`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (response.ok) {
-        const msg = data.message || "A new OTP has been sent to your email.";
-        showMessage(messageDiv, msg, "success");
-      } else {
-        const err = data.message || `Request failed (${response.status})`;
-        showMessage(messageDiv, err, "error");
-      }
-    } catch (error) {
-      console.error("Resend OTP error:", error);
-      showMessage(messageDiv, "Network error while sending OTP. Please try again.", "error");
-    } finally {
-      if (button) {
-        button.disabled = false;
-        button.textContent = "Resend OTP";
-      }
-    }
-  };
-
-  if (resendButton) {
-    resendButton.addEventListener("click", handleResend);
-  }
+  })();
 });
