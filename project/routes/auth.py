@@ -9,6 +9,7 @@ import threading
 from datetime import datetime, timedelta, timezone
 from flask import Blueprint, request, jsonify, session, current_app
 from sqlalchemy import func
+import uuid
 from ..models import User
 from ..extensions import db, bcrypt
 from ..services import otp_service, email_service
@@ -217,8 +218,13 @@ def logout():
     """
     user_id = session.get('user_id')
     if user_id:
-        user = User.query.get(user_id)
-        current_app.logger.info(f"User logged out: {user.email}")
+        try:
+            user_uuid = uuid.UUID(user_id)
+            user = User.query.get(user_uuid)
+            if user:
+                current_app.logger.info(f"User logged out: {user.email}")
+        except (ValueError, TypeError):
+            current_app.logger.warning("Invalid user_id in session during logout")
     session.clear()
     return jsonify({"message": "Logged out successfully"}), 200
 

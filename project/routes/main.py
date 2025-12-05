@@ -7,6 +7,7 @@ WHOIS, DNS, geolocation, etc. All routes require user authentication.
 """
 from flask import Blueprint, request, jsonify, session
 from functools import wraps
+import uuid
 from ..utils import is_valid_host
 from ..services import domain_service
 from ..services.assistant_service import DashboardAssistant
@@ -28,6 +29,20 @@ def _set_assistant_context(tool: str, target: str, summary: str | None = None) -
         "summary": summary or "",
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
+
+
+def _get_session_user() -> User | None:
+    """
+    Resolve the logged-in user from the session, handling UUID parsing safely.
+    """
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
+    try:
+        user_uuid = uuid.UUID(user_id)
+    except (ValueError, TypeError):
+        return None
+    return User.query.get(user_uuid)
 
 @main_bp.route('/health', methods=['GET'])
 def health_check():
@@ -127,8 +142,7 @@ def profile_management():
     """
     Allows users to fetch and update their profile information.
     """
-    user_id = session.get("user_id")
-    user = User.query.get(user_id)
+    user = _get_session_user()
 
     if not user:
         return jsonify({"message": "User not found"}), 404
@@ -178,8 +192,7 @@ def delete_account():
     """
     Allows a logged-in user to delete their own account.
     """
-    user_id = session.get("user_id")
-    user = User.query.get(user_id)
+    user = _get_session_user()
 
     if not user:
         return jsonify({"message": "User not found"}), 404
