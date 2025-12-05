@@ -23,6 +23,8 @@
   --accent-ember: #ff9d7c;
   --grid-gap: clamp(24px, 4vw, 48px);
   --nav-height: 64px;
+  --status-success: #34d399; /* Green for success */
+  --status-danger: #f87171; /* Red for danger */
 }
 
 html {

@@ -794,16 +794,24 @@ header .logo img {
   box-shadow: 0 0 10px rgba(248, 113, 113, 0.5);
 }
 
+.port-status {
+  display: flex; /* Use flexbox for alignment */
+  align-items: center; /* Vertically align items */
+  gap: 8px; /* Space between icon and text */
+  font-weight: 600;
+}
+
+.port-status-icon {
+  font-size: 1.2em; /* Make icon slightly larger */
+  line-height: 1; /* Ensure icon doesn't add extra line height */
+}
+
 .status-open {
-  color: white;
-  background-color: #34d399;
-  box-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
+  color: var(--status-success); /* Use a CSS variable for green */
 }
 
 .status-closed {
-  color: white;
-  background-color: #f87171;
-  box-shadow: 0 0 10px rgba(248, 113, 113, 0.5);
+  color: var(--status-danger); /* Use a CSS variable for red */
 }
 
 .log-details summary {
