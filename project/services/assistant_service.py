@@ -31,6 +31,10 @@ class DashboardAssistant:
         ]
         self.gemini_api_key = os.environ.get("GEMINI_API_KEY")
         self.gemini_model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+        self.gemini_enabled = (
+            os.environ.get("ASSISTANT_EXPERIMENTAL_GEMINI", "").lower()
+            in {"1", "true", "yes", "on"}
+        )
 
     def answer(self, question: str, tool_hint: str | None = None, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         text = (question or "").strip()
@@ -40,8 +44,8 @@ class DashboardAssistant:
         context = context or {}
         selected_tool = self._resolve_tool(text, tool_hint) or context.get("tool")
 
-        # Prefer Gemini for all responses when available
-        if self.gemini_api_key:
+        # Prefer Gemini for all responses when explicitly enabled
+        if self._is_gemini_active():
             for attempt_tool in (selected_tool, None, selected_tool):
                 ai_response = self._call_gemini(question=text, tool=attempt_tool, context=context)
                 if ai_response and ai_response.get("answer"):
@@ -109,7 +113,7 @@ class DashboardAssistant:
         return [action for action in actions if action]
 
     def _default_response(self) -> Dict[str, Any]:
-        if self.gemini_api_key:
+        if self._is_gemini_active():
             ai_response = self._call_gemini(
                 question="Briefly introduce how you can help with IT, systems, and networking questions.",
                 tool=None,
@@ -165,6 +169,8 @@ class DashboardAssistant:
 
     def _call_gemini(self, question: str, tool: Optional[str], context: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """Optional Gemini call; returns None on any failure."""
+        if not self._is_gemini_active():
+            return None
         try:
             guidance = self.tools.get(tool) or {}
             prompt = self._build_prompt(question, tool, guidance, context or {})
@@ -197,6 +203,10 @@ class DashboardAssistant:
         except Exception:
             logging.getLogger(__name__).warning("Gemini call failed", exc_info=True)
             return None
+
+    def _is_gemini_active(self) -> bool:
+        """Guard experimental Gemini usage behind an explicit opt-in flag."""
+        return bool(self.gemini_enabled and self.gemini_api_key)
 
     def _build_prompt(self, question: str, tool: Optional[str], guidance: Dict[str, Any], context: Dict[str, Any]) -> str:
         usage = "\n".join(f"- {item}" for item in guidance.get("usage", []))

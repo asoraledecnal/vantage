@@ -64,4 +64,9 @@ class Config:
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash')
 
+    # OTP salt (required for hashing reset codes)
+    OTP_SALT = os.environ.get('OTP_SALT')
+    if not OTP_SALT:
+        raise ValueError("FATAL: OTP_SALT environment variable is not set.")
+
 # For potential future use, e.g., class DevelopmentConfig(Config): ...

@@ -169,4 +169,15 @@ This project is configured for deployment on **Render** using Docker.
     - `SENDGRID_API_KEY`
     - `VERIFIED_SENDER_EMAIL`
     - `ADMIN_EMAIL`
+    - `OTP_SALT` (required; used to hash OTPs securely)
+    - Optional: `GEMINI_API_KEY`, `GEMINI_MODEL`, and `ASSISTANT_EXPERIMENTAL_GEMINI=1` if you intentionally want Gemini-enabled replies (defaults to heuristic if not set).
 4.  **Deploy:** Trigger a manual deployment. Render will use the `Dockerfile` to build and deploy your application.
+
+### Render deployment checklist (to match local behavior)
+- **HTTPS & sessions:** `SESSION_COOKIE_SECURE=True` and `SESSION_COOKIE_SAMESITE=None` mean you must access the Render app over HTTPS or cookies won’t stick. Keep `SECRET_KEY` stable between deploys.
+- **CORS:** `CORS_ORIGINS` currently whitelists local hosts and `https://asoraledecnal.github.io`. Add your deployed frontend origin if different to avoid browser CORS blocks.
+- **Database:** Ensure tables are created on Render (run the `db-init` command or equivalent) and point `DATABASE_URL` to Postgres, not SQLite.
+- **Outbound egress:** WHOIS (port 43), DNS lookups, port scans, `http://ip-api.com` (GeoIP), and speed tests need outbound network access. If egress is restricted, these endpoints will return errors.
+- **Email:** SendGrid credentials plus a verified sender are required; otherwise OTP and feedback emails will be skipped.
+- **Rate limits:** Defaults are 200/day and 50/hour per IP. Behind a proxy, many users may share one IP—adjust if necessary.
+- **Optional heavy endpoints:** `/api/speed` can be slow/expensive; consider restricting or warning in production if resources are tight.

@@ -8,6 +8,7 @@ and session verification. All routes are prefixed with '/api'.
 import threading
 from datetime import datetime, timedelta, timezone
 from flask import Blueprint, request, jsonify, session, current_app
+from sqlalchemy import func
 from ..models import User
 from ..extensions import db, bcrypt
 from ..services import otp_service, email_service
@@ -176,16 +177,18 @@ def login():
     Authenticates a user and creates a session.
     """
     data = request.get_json(silent=True) or {}
-    identifier = data.get("login_identifier") or data.get("email")
+    identifier = (data.get("login_identifier") or data.get("email") or "").strip()
+    password = (data.get("password") or "").strip()
     user = None
     if identifier:
-        user = User.query.filter_by(email=identifier).first()
+        lowered = identifier.lower()
+        user = User.query.filter(func.lower(User.email) == lowered).first()
         if not user:
-            user = User.query.filter_by(username=identifier).first()
-    if not identifier or not data.get("password"):
+            user = User.query.filter(func.lower(User.username) == lowered).first()
+    if not identifier or not password:
         return jsonify({"message": "Email (or username) and password are required."}), 400
 
-    if not user or not bcrypt.check_password_hash(user.password_hash, data.get("password")):
+    if not user or not bcrypt.check_password_hash(user.password_hash, password):
         current_app.logger.warning(f"Failed login attempt for user: {identifier}")
         return jsonify({"message": "Invalid email or password"}), 401
 
@@ -239,33 +242,19 @@ def forgot_password():
         return jsonify({"message": "Email is required."}), 400
 
     user = User.query.filter_by(email=email).first()
-    if not user:
-        current_app.logger.info(f"Password reset request for non-existent user: {email}")
-        return jsonify({
-            "message": "No account found for this email. Please create an account.",
-            "action": "signup"
-        }), 200
-
-    if not user.is_verified:
-        # Prevent reset from clobbering the signup verification OTP; prompt verification first.
+    if user:
         otp = otp_service.generate_otp()
         user.otp_hash = otp_service.hash_otp(otp)
         user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
         db.session.commit()
-        threading.Thread(target=email_service.send_otp_email, args=(user.email, otp)).start()
-        current_app.logger.warning(f"Password reset requested for unverified user: {email}. Sent verification OTP instead.")
-        return jsonify({"message": "Account not verified. A new OTP has been sent to your email to verify the account."}), 200
 
-    otp = otp_service.generate_otp()
-    user.otp_hash = otp_service.hash_otp(otp)
-    user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
-    db.session.commit()
+        current_app.logger.info(f"Password reset OTP dispatched for user: {email}")
+        threading.Thread(target=email_service.send_password_reset_email, args=(user.email, otp)).start()
+    else:
+        current_app.logger.info(f"Password reset requested for non-existent user: {email}")
 
-    current_app.logger.info(f"Password reset OTP sent to user: {email}")
-    threading.Thread(target=email_service.send_password_reset_email, args=(user.email, otp)).start()
-
+    # Always return a generic response to prevent account enumeration
     return jsonify({"message": "If an account with that email exists, a password reset OTP has been sent."}), 200
-
 
 @auth_bp.route('/reset-password', methods=['POST'])
 def reset_password():

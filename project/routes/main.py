@@ -249,7 +249,7 @@ def assistant_status():
     """
     try:
         assistant = DashboardAssistant()
-        configured = bool(assistant.gemini_api_key)
+        configured = assistant._is_gemini_active()
         test_result = None
         if configured:
             test = assistant._call_gemini("Say hello from Vantage assistant.", tool=None, context={})
@@ -261,6 +261,7 @@ def assistant_status():
             "gemini_configured": configured,
             "model": assistant.gemini_model if configured else None,
             "test_call": test_result,
+            "experimental_flag": assistant.gemini_enabled,
         }), 200
     except Exception:
         return jsonify({
