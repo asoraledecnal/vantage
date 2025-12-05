@@ -31,6 +31,28 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // --- Navigation Toggle (copied from main.js) ---
+  const navToggle = document.getElementById("nav-toggle");
+  const navLinks = document.getElementById("nav-links");
+
+  if (navToggle && navLinks) {
+    const closeNav = () => {
+      navLinks.classList.remove("is-open");
+      navToggle.classList.remove("is-open");
+      navToggle.setAttribute("aria-expanded", "false");
+    };
+
+    navToggle.addEventListener("click", () => {
+      const isOpen = navLinks.classList.toggle("is-open");
+      navToggle.classList.toggle("is-open", isOpen);
+      navToggle.setAttribute("aria-expanded", String(isOpen));
+    });
+
+    navLinks.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", closeNav);
+    });
+  }
+
   // --- Tab Navigation ---
   const tabs = document.querySelectorAll(".tab-button");
   const tabContents = document.querySelectorAll(".tab-content");

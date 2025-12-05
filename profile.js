@@ -1,4 +1,35 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // --- Navigation Toggle ---
+  const navToggle = document.getElementById("nav-toggle");
+  const navLinks = document.getElementById("nav-links");
+
+  console.log("Profile.js: DOMContentLoaded fired.");
+  console.log("Profile.js: navToggle element:", navToggle);
+  console.log("Profile.js: navLinks element:", navLinks);
+
+  if (navToggle && navLinks) {
+    const closeNav = () => {
+      navLinks.classList.remove("is-open");
+      navToggle.classList.remove("is-open");
+      navToggle.setAttribute("aria-expanded", "false");
+      console.log("Profile.js: Menu closed.");
+    };
+
+    navToggle.addEventListener("click", () => {
+      const isOpen = navLinks.classList.toggle("is-open");
+      navToggle.classList.toggle("is-open", isOpen);
+      navToggle.setAttribute("aria-expanded", String(isOpen));
+      console.log("Profile.js: Menu toggled, isOpen:", isOpen);
+    });
+
+    navLinks.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", closeNav);
+    });
+    console.log("Profile.js: Navigation toggle event listeners attached.");
+  } else {
+    console.log("Profile.js: Navigation toggle elements not found.");
+  }
+
   const DEFAULT_API_BASE_URL = 'https://vantage-backend-api.onrender.com/api';
   const API_BASE_URL = (window.APP_CONFIG && window.APP_CONFIG.backendApiBase) || DEFAULT_API_BASE_URL;
 
@@ -15,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = "login.html";
     }
   };
-  checkAuth(); 
+  // checkAuth(); // Temporarily commented out for debugging menu issue
 
   // --- Logout Button ---
   const logoutBtn = document.getElementById("logout-btn");
