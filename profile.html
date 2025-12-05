@@ -35,7 +35,6 @@
       <nav class="nav__links" id="nav-links">
         <a href="index.html">Home</a>
         <a href="dashboard.html">Dashboard</a>
-        <a href="#" id="logout-btn" class="nav__logout-btn">Logout</a>
       </nav>
     </header>
 
@@ -56,7 +55,7 @@
                                 <div class="result-header">Profile</div>
                                 <p class="card-subtitle">Update your name and contact info.</p>
                             </div>
-                            <span class="badge badge-soft">Coming soon</span>
+                            <span class="badge badge-soft" style="display: none;">Coming soon</span>
                         </div>
                         <div class="form-row">
                             <label for="profile-firstname">First Name</label>
@@ -74,24 +73,25 @@
                             <label for="profile-phone">Phone</label>
                             <input type="tel" id="profile-phone" name="phone" placeholder="+63...">
                         </div>
-                        <button type="submit" class="ghost-button">Save changes</button>
-                        <p class="note-text">Profile editing endpoint not yet available.</p>
+                        <div class="form-actions dual">
+                            <button type="button" id="profile-cancel-btn" class="ghost-button">Cancel</button>
+                            <button type="submit" id="profile-save-btn" class="cta-button" disabled>Save changes</button>
+                        </div>
                     </form>
 
-                    <form id="profile-password-form" class="profile-card">
+                    <div class="profile-card">
                         <div class="card-header">
                             <div>
-                                <div class="result-header">Password</div>
-                                <p class="card-subtitle">Reset your password with a new OTP.</p>
+                                <div class="result-header">Security</div>
+                                <p class="card-subtitle">Manage your account security settings.</p>
                             </div>
                         </div>
-                        <div class="form-row">
-                            <label for="profile-password-email">Email</label>
-                            <input type="email" id="profile-password-email" name="email" placeholder="you@example.com" required>
+                        <div class="form-actions vertical">
+                            <button type="button" id="change-password-btn" class="cta-button">Change Password</button>
+                            <button type="button" id="change-email-btn" class="ghost-button">Change Email</button>
+                            <button type="button" id="logout-btn" class="ghost-button">Logout</button>
                         </div>
-                        <button type="submit" class="cta-button">Send reset OTP</button>
-                        <div id="profile-password-message" class="inline-message"></div>
-                    </form>
+                    </div>
 
                     <form id="profile-delete-form" class="profile-card danger-card">
                         <div class="card-header">

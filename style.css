@@ -144,7 +144,6 @@ ul {
 }
 
 .nav__toggle {
-  display: none;
   flex-direction: column;
   gap: 6px;
   width: 40px;
@@ -155,7 +154,9 @@ ul {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  display: none;
 }
+
 
 .nav__toggle span {
   display: block;
@@ -516,6 +517,19 @@ ul {
   color: #ffb0b0;
   border: 1px solid rgba(255, 176, 176, 0.35);
   background: rgba(255, 99, 99, 0.08);
+}
+
+.success-message {
+  padding: 14px 16px;
+  border-radius: 14px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  display: block; /* Ensure it's visible by default when added */
+  animation: slideDown 0.3s ease-out; /* Use existing animation */
 }
 
 /* --------------------------------------------------------------

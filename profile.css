@@ -152,35 +152,73 @@
   box-shadow: 0 0 0 4px rgba(255, 216, 137, 0.18);
 }
 
-.ghost-button {
-  width: 100%;
+.form-actions {
+    display: flex;
+    gap: 12px; /* Spacing between buttons */
+    margin-top: 10px; /* Adjust as needed */
+}
+
+.form-actions.dual {
+    flex-direction: row;
+    justify-content: space-between; /* Distribute items with space between them */
+}
+
+.form-actions.dual > button {
+    flex: 1; /* Make buttons take equal width */
+}
+
+.form-actions.vertical {
+    flex-direction: column;
+}
+
+/* Base button styles to ensure consistency */
+.ghost-button, .cta-button, .danger-button {
   padding: 12px;
   border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.ghost-button {
   border: 1px dashed rgba(255, 255, 255, 0.25);
   background: transparent;
   color: #d7def1;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  font-weight: 700;
-  cursor: pointer;
+}
+
+.ghost-button:hover:not(:disabled) {
+    border-color: rgba(255, 255, 255, 0.4);
+    color: var(--text-strong);
+}
+
+.ghost-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
 }
 
 .cta-button {
-  width: 100%;
-  padding: 12px;
-  border-radius: 12px;
   border: none;
   background: linear-gradient(120deg, #ffd889, #ff9d7c);
   color: #1a1407;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  font-weight: 700;
-  cursor: pointer;
   box-shadow: 0 16px 36px rgba(255, 157, 124, 0.28);
 }
 
-.cta-button:hover {
+.cta-button:hover:not(:disabled) {
   box-shadow: 0 22px 44px rgba(255, 157, 124, 0.38);
+  transform: translateY(-2px);
+}
+
+.cta-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: linear-gradient(120deg, #5c5c5c, #4a4a4a); /* Darker gradient for disabled */
+    box-shadow: none;
+    color: #a4aac3; /* Muted text color */
+    transform: none; /* Remove hover effect */
 }
 
 .danger-card {
