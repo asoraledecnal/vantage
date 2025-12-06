@@ -90,6 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const changePasswordBtn = document.getElementById('change-password-btn');
   const changeEmailBtn = document.getElementById('change-email-btn');
   const profileEmailDisplay = document.getElementById('profile-email');
+  const profileStatus = document.getElementById('profile-status');
 
   const profileFields = ['profile-firstname', 'profile-lastname', 'profile-username', 'profile-phone'];
 
@@ -168,6 +169,18 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("checkFormChanges executed, hasChanges:", hasChanges, "saveBtnDisabled:", profileSaveBtn.disabled);
   };
 
+  const showStatus = (message, type = "success") => {
+    if (!profileStatus) return;
+    profileStatus.textContent = message;
+    profileStatus.className = `form-status ${type}`;
+  };
+
+  const clearStatus = () => {
+    if (!profileStatus) return;
+    profileStatus.textContent = "";
+    profileStatus.className = "form-status";
+  };
+
   // On profile.html, the profile section is always visible, so fetch data on load
   fetchUserProfile();
 
@@ -202,15 +215,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const result = await response.json();
         if (response.ok) {
           displaySuccess("Profile updated successfully!"); // New success message display
+          showStatus(result.message || "Profile updated successfully!", "success");
           originalUserData = { ...updatedData }; // Update original data after successful save
         } else if (response.status === 401) {
           window.location.href = "login.html";
         } else {
           displayError(result.message || 'Failed to update profile.');
+          showStatus(result.message || 'Failed to update profile.', "error");
         }
       } catch (error) {
         console.error('Error updating profile:', error);
         displayError('Network error during profile update.');
+        showStatus('Network error during profile update.', "error");
       } finally {
         checkFormChanges(); // Re-check button state after API call
       }
@@ -227,6 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
       checkFormChanges(); // Reset button states
+      clearStatus();
       console.log("Cancel button clicked, fields reverted.");
     });
   }
