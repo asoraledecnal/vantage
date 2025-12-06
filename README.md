@@ -25,7 +25,20 @@ This project is built with a focus on clean architecture, maintainability, and e
 - **Domain Research:** `/api/domain` bundles the above checks and lets callers specify a subset via the `fields` array.
 - **Guidance Endpoint:** `/api/tool-guidance?tool=<name>` returns instructions per tool (usage tips, example payloads) powered by `project/services/guidance_service.py`, as documented in AGENTS.md.
 
-## 3. Technical Stack
+## 3. Backend API Routes (JSON)
+
+- `POST /api/signup` / `POST /api/verify-otp` / `POST /api/resend-otp`: account creation and email verification via 6-digit OTP.
+- `POST /api/login` / `POST /api/logout` / `GET /api/check_session`: session lifecycle; sets/clears the `user_id` session cookie.
+- `POST /api/forgot-password` / `POST /api/reset-password`: password reset with hashed OTP + 5-minute expiry; responses stay generic to prevent enumeration.
+- `POST /api/change-email` / `POST /api/change-password`: in-session email/password updates; require current password.
+- `POST /api/domain`: combined WHOIS/DNS/geoip/port checks; accepts `domain` and optional `fields`/`port`.
+- `POST /api/whois`, `/api/dns`, `/api/geoip`, `/api/port_scan`, `/api/speed`: individual diagnostics; require an authenticated session.
+- `GET /api/tool-guidance`: returns usage tips/examples for a given tool.
+- `POST /api/assistant` / `GET /api/assistant/status`: dashboard helper answers plus optional Gemini readiness check.
+- `POST /api/contact`: saves feedback and dispatches email notification.
+- `GET /api/health`: basic health probe (no auth).
+
+## 4. Technical Stack
 
 - **Backend:** Python 3.11+, Flask
 - **Database:** PostgreSQL (production), SQLite (local dev option)
@@ -41,7 +54,7 @@ This project is built with a focus on clean architecture, maintainability, and e
 
 ---
 
-## 4. Project Structure
+## 5. Project Structure
 
 The project follows a standard package-based structure to ensure a clean separation of concerns.
 
@@ -73,7 +86,7 @@ The project follows a standard package-based structure to ensure a clean separat
 `-- run.py                # Application entry point
 ```
 
-## 5. Setup and Installation
+## 6. Setup and Installation
 
 ### Prerequisites
 - Python 3.11+
@@ -157,7 +170,7 @@ Use the Mongo-style guidance data to power helpers or UI tooltips; call `/api/to
 
 ---
 
-## 6. Deployment on Render
+## 7. Deployment on Render
 
 This project is configured for deployment on **Render** using Docker.
 

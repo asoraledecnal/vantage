@@ -89,6 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const profileCancelBtn = document.getElementById('profile-cancel-btn');
   const changePasswordBtn = document.getElementById('change-password-btn');
   const changeEmailBtn = document.getElementById('change-email-btn');
+  const profileEmailDisplay = document.getElementById('profile-email');
 
   const profileFields = ['profile-firstname', 'profile-lastname', 'profile-username', 'profile-phone'];
 
@@ -116,6 +117,10 @@ document.addEventListener("DOMContentLoaded", () => {
           lastname: formatName(userData.lastname || ""),
         };
         originalUserData = { ...formattedData }; // Store a copy of original (formatted) data
+
+        if (profileEmailDisplay) {
+          profileEmailDisplay.value = userData.email || '';
+        }
 
         profileFields.forEach(fieldId => {
           const input = document.getElementById(fieldId);
