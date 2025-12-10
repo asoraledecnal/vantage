@@ -18,7 +18,8 @@ services:
       flask db-init
 
     # Start command: Runs the application using the Gunicorn production server.
-    startCommand: "gunicorn run:app"
+    # Bind to the port Render provides to satisfy its health checks.
+    startCommand: "gunicorn run:app --bind 0.0.0.0:$PORT --forwarded-allow-ips *"
 
     # Health Check: Render uses this path to determine if a deployment is live and healthy.
     healthCheck:

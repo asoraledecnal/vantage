@@ -9,6 +9,7 @@ needing to read the docs.
 from __future__ import annotations
 
 import os
+import time
 from typing import Any, Dict, Iterable, List, Optional
 
 import requests
@@ -31,10 +32,18 @@ class DashboardAssistant:
         ]
         self.gemini_api_key = os.environ.get("GEMINI_API_KEY")
         self.gemini_model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-        self.gemini_enabled = (
-            os.environ.get("ASSISTANT_EXPERIMENTAL_GEMINI", "").lower()
-            in {"1", "true", "yes", "on"}
+        # Default to using Gemini whenever a key is present unless explicitly disabled.
+        self.gemini_enabled = bool(self.gemini_api_key) and (
+            os.environ.get("ASSISTANT_DISABLE_GEMINI", "").lower()
+            not in {"1", "true", "yes", "on"}
         )
+        # Backoff and circuit breaker knobs to avoid spamming upstream when overloaded.
+        self.gemini_max_retries = int(os.environ.get("GEMINI_MAX_RETRIES", "2"))
+        self.gemini_retry_backoff = float(os.environ.get("GEMINI_RETRY_BACKOFF", "1.5"))
+        self.gemini_circuit_threshold = int(os.environ.get("GEMINI_CIRCUIT_THRESHOLD", "3"))
+        self.gemini_circuit_cooldown = int(os.environ.get("GEMINI_CIRCUIT_COOLDOWN", "60"))
+        self._gemini_failures = 0
+        self._gemini_circuit_until = 0.0
 
     def answer(self, question: str, tool_hint: str | None = None, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         text = (question or "").strip()
@@ -171,6 +180,9 @@ class DashboardAssistant:
         """Optional Gemini call; returns None on any failure."""
         if not self._is_gemini_active():
             return None
+        now = time.time()
+        if now < self._gemini_circuit_until:
+            return None
         try:
             guidance = self.tools.get(tool) or {}
             prompt = self._build_prompt(question, tool, guidance, context or {})
@@ -182,30 +194,52 @@ class DashboardAssistant:
                     "maxOutputTokens": 220,
                 },
             }
-            resp = requests.post(url, json=payload, timeout=15)
-            if resp.status_code != 200:
+            for attempt in range(1, self.gemini_max_retries + 1):
+                resp = requests.post(url, json=payload, timeout=12)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    candidates = data.get("candidates") or []
+                    if not candidates:
+                        break
+                    text = ""
+                    for part in candidates[0].get("content", {}).get("parts", []):
+                        if "text" in part:
+                            text += part["text"]
+                    if not text:
+                        break
+                    # Success: reset failure counters and return the model answer.
+                    self._gemini_failures = 0
+                    return {"answer": text.strip(), "ai_provider": "gemini"}
+
+                # Log once per attempt with status code to aid debugging.
+                logging.getLogger(__name__).warning("Gemini HTTP %s: %s", resp.status_code, resp.text)
+                if resp.status_code >= 500:
+                    self._gemini_failures += 1
+                if attempt < self.gemini_max_retries:
+                    time.sleep(self.gemini_retry_backoff * attempt)
+
+            # If we exhaust retries or get a non-success, consider circuit breaking.
+            if self._gemini_failures >= self.gemini_circuit_threshold:
+                self._gemini_circuit_until = time.time() + self.gemini_circuit_cooldown
                 logging.getLogger(__name__).warning(
-                    "Gemini HTTP %s: %s", resp.status_code, resp.text
+                    "Gemini circuit open for %ss after %s failures",
+                    self.gemini_circuit_cooldown,
+                    self._gemini_failures,
                 )
-                return None
-            data = resp.json()
-            candidates = data.get("candidates") or []
-            if not candidates:
-                return None
-            text = ""
-            for part in candidates[0].get("content", {}).get("parts", []):
-                if "text" in part:
-                    text += part["text"]
-            if not text:
-                return None
-            # Keep it simple: return the model answer as the main answer, preserve existing tips/actions.
-            return {"answer": text.strip(), "ai_provider": "gemini"}
+            return None
         except Exception:
+            self._gemini_failures += 1
             logging.getLogger(__name__).warning("Gemini call failed", exc_info=True)
+            if self._gemini_failures >= self.gemini_circuit_threshold:
+                self._gemini_circuit_until = time.time() + self.gemini_circuit_cooldown
+                logging.getLogger(__name__).warning(
+                    "Gemini circuit open for %ss after exception failures",
+                    self.gemini_circuit_cooldown,
+                )
             return None
 
     def _is_gemini_active(self) -> bool:
-        """Guard experimental Gemini usage behind an explicit opt-in flag."""
+        """Use Gemini whenever a key is present, unless explicitly disabled or circuit-open."""
         return bool(self.gemini_enabled and self.gemini_api_key)
 
     def _build_prompt(self, question: str, tool: Optional[str], guidance: Dict[str, Any], context: Dict[str, Any]) -> str:

@@ -12,8 +12,8 @@ RUN pip install -r requirements.txt
 # Copy the rest of the project files (assuming app.py is in root)
 COPY . .
 
-# Expose port 8000 for Render
+# Expose default port (Render will inject $PORT at runtime)
 EXPOSE 8000
 
-# Start the app with gunicorn
-CMD ["gunicorn", "run:app", "--bind", "0.0.0.0:8000", "--forwarded-allow-ips", "*"]
+# Start the app with gunicorn, binding to the port Render provides
+CMD ["gunicorn", "run:app", "--bind", "0.0.0.0:${PORT:-8000}", "--forwarded-allow-ips", "*"]
