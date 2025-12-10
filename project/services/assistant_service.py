@@ -48,6 +48,22 @@ class DashboardAssistant:
         self._gemini_circuit_until = 0.0
         # Simple in-memory cache to reuse answers for repeated questions/context.
         self._gemini_cache: Dict[tuple, tuple[str, float]] = {}
+        # OpenAI (Codex/ChatGPT) configuration
+        self.openai_api_key = os.environ.get("OPENAI_API_KEY")
+        self.openai_model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+        self.openai_enabled = bool(self.openai_api_key) and (
+            os.environ.get("ASSISTANT_DISABLE_OPENAI", "").lower()
+            not in {"1", "true", "yes", "on"}
+        )
+        self.openai_max_tokens = int(os.environ.get("OPENAI_MAX_TOKENS", "360"))
+        self.openai_temperature = float(os.environ.get("OPENAI_TEMPERATURE", "0.35"))
+        self.openai_timeout = int(os.environ.get("OPENAI_TIMEOUT", "12"))
+        self.openai_max_retries = int(os.environ.get("OPENAI_MAX_RETRIES", "1"))
+        self.openai_retry_backoff = float(os.environ.get("OPENAI_RETRY_BACKOFF", "1.5"))
+        self._openai_failures = 0
+        self.openai_circuit_threshold = int(os.environ.get("OPENAI_CIRCUIT_THRESHOLD", "3"))
+        self.openai_circuit_cooldown = int(os.environ.get("OPENAI_CIRCUIT_COOLDOWN", "60"))
+        self._openai_circuit_until = 0.0
 
     def answer(self, question: str, tool_hint: str | None = None, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         text = (question or "").strip()
@@ -57,7 +73,21 @@ class DashboardAssistant:
         context = context or {}
         selected_tool = self._resolve_tool(text, tool_hint) or context.get("tool")
 
-        # Prefer Gemini for all responses when explicitly enabled
+        # Prefer OpenAI if enabled; otherwise Gemini; otherwise deterministic guidance.
+        if self._is_openai_active():
+            cached_ai = self._cache_get(question=text, tool=selected_tool, context=context)
+            if cached_ai and cached_ai.get("answer"):
+                if selected_tool:
+                    return self._build_ai_tool_response(selected_tool, cached_ai["answer"], context)
+                return self._build_ai_general_response(cached_ai["answer"], context)
+            for attempt_tool in (selected_tool, None, selected_tool):
+                ai_response = self._call_openai(question=text, tool=attempt_tool, context=context)
+                if ai_response and ai_response.get("answer"):
+                    if attempt_tool:
+                        return self._build_ai_tool_response(attempt_tool, ai_response["answer"], context)
+                    return self._build_ai_general_response(ai_response["answer"], context)
+            # OpenAI configured but unavailable; try Gemini next.
+
         if self._is_gemini_active():
             cached_ai = self._cache_get(question=text, tool=selected_tool, context=context)
             if cached_ai and cached_ai.get("answer"):
@@ -263,6 +293,10 @@ class DashboardAssistant:
         """Use Gemini whenever a key is present, unless explicitly disabled or circuit-open."""
         return bool(self.gemini_enabled and self.gemini_api_key)
 
+    def _is_openai_active(self) -> bool:
+        """Use OpenAI whenever a key is present, unless explicitly disabled or circuit-open."""
+        return bool(self.openai_enabled and self.openai_api_key and time.time() >= self._openai_circuit_until)
+
     def _normalize_question(self, question: str) -> str:
         return " ".join(question.lower().split())
 
@@ -291,6 +325,74 @@ class DashboardAssistant:
             oldest_key = min(self._gemini_cache.items(), key=lambda item: item[1][1])[0]
             if oldest_key != key:
                 self._gemini_cache.pop(oldest_key, None)
+
+    def _call_openai(self, question: str, tool: Optional[str], context: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        """Call OpenAI (Codex/ChatGPT) API; returns None on any failure."""
+        if not self._is_openai_active():
+            return None
+        now = time.time()
+        if now < self._openai_circuit_until:
+            return None
+        headers = {
+            "Authorization": f"Bearer {self.openai_api_key}",
+            "Content-Type": "application/json",
+        }
+        try:
+            guidance = self.tools.get(tool) or {}
+            prompt = self._build_prompt(question, tool, guidance, context or {})
+            payload = {
+                "model": self.openai_model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": self.openai_max_tokens,
+                "temperature": self.openai_temperature,
+            }
+            for attempt in range(1, self.openai_max_retries + 1):
+                resp = requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=self.openai_timeout,
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    choices = data.get("choices") or []
+                    if not choices or not choices[0].get("message", {}).get("content"):
+                        break
+                    answer = choices[0]["message"]["content"].strip()
+                    self._openai_failures = 0
+                    self._cache_set(question=question, tool=tool, context=context, answer=answer)
+                    return {"answer": answer, "ai_provider": "openai"}
+                logging.getLogger(__name__).warning("OpenAI HTTP %s: %s", resp.status_code, resp.text)
+                if resp.status_code >= 500:
+                    self._openai_failures += 1
+                    if resp.status_code == 503 and self._openai_failures >= self.openai_circuit_threshold:
+                        self._openai_circuit_until = time.time() + self.openai_circuit_cooldown
+                        logging.getLogger(__name__).warning(
+                            "OpenAI circuit open for %ss after %s failures",
+                            self.openai_circuit_cooldown,
+                            self._openai_failures,
+                        )
+                        return None
+                if attempt < self.openai_max_retries:
+                    time.sleep(self.openai_retry_backoff * attempt)
+            if self._openai_failures >= self.openai_circuit_threshold:
+                self._openai_circuit_until = time.time() + self.openai_circuit_cooldown
+                logging.getLogger(__name__).warning(
+                    "OpenAI circuit open for %ss after %s failures",
+                    self.openai_circuit_cooldown,
+                    self._openai_failures,
+                )
+            return None
+        except Exception:
+            self._openai_failures += 1
+            logging.getLogger(__name__).warning("OpenAI call failed", exc_info=True)
+            if self._openai_failures >= self.openai_circuit_threshold:
+                self._openai_circuit_until = time.time() + self.openai_circuit_cooldown
+                logging.getLogger(__name__).warning(
+                    "OpenAI circuit open for %ss after exception failures",
+                    self.openai_circuit_cooldown,
+                )
+            return None
 
     def _build_prompt(self, question: str, tool: Optional[str], guidance: Dict[str, Any], context: Dict[str, Any]) -> str:
         usage = "\n".join(f"- {item}" for item in guidance.get("usage", []))
