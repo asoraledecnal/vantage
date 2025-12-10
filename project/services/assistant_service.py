@@ -38,12 +38,16 @@ class DashboardAssistant:
             not in {"1", "true", "yes", "on"}
         )
         # Backoff and circuit breaker knobs to avoid spamming upstream when overloaded.
-        self.gemini_max_retries = int(os.environ.get("GEMINI_MAX_RETRIES", "2"))
+        self.gemini_max_retries = int(os.environ.get("GEMINI_MAX_RETRIES", "1"))
         self.gemini_retry_backoff = float(os.environ.get("GEMINI_RETRY_BACKOFF", "1.5"))
         self.gemini_circuit_threshold = int(os.environ.get("GEMINI_CIRCUIT_THRESHOLD", "3"))
         self.gemini_circuit_cooldown = int(os.environ.get("GEMINI_CIRCUIT_COOLDOWN", "60"))
+        self.gemini_cache_ttl = int(os.environ.get("GEMINI_CACHE_TTL", "900"))
+        self.gemini_cache_max = int(os.environ.get("GEMINI_CACHE_MAX", "100"))
         self._gemini_failures = 0
         self._gemini_circuit_until = 0.0
+        # Simple in-memory cache to reuse answers for repeated questions/context.
+        self._gemini_cache: Dict[tuple, tuple[str, float]] = {}
 
     def answer(self, question: str, tool_hint: str | None = None, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         text = (question or "").strip()
@@ -55,6 +59,11 @@ class DashboardAssistant:
 
         # Prefer Gemini for all responses when explicitly enabled
         if self._is_gemini_active():
+            cached_ai = self._cache_get(question=text, tool=selected_tool, context=context)
+            if cached_ai and cached_ai.get("answer"):
+                if selected_tool:
+                    return self._build_ai_tool_response(selected_tool, cached_ai["answer"], context)
+                return self._build_ai_general_response(cached_ai["answer"], context)
             for attempt_tool in (selected_tool, None, selected_tool):
                 ai_response = self._call_gemini(question=text, tool=attempt_tool, context=context)
                 if ai_response and ai_response.get("answer"):
@@ -191,7 +200,7 @@ class DashboardAssistant:
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {
                     "temperature": 0.35,
-                    "maxOutputTokens": 220,
+                    "maxOutputTokens": 360,
                 },
             }
             for attempt in range(1, self.gemini_max_retries + 1):
@@ -209,12 +218,24 @@ class DashboardAssistant:
                         break
                     # Success: reset failure counters and return the model answer.
                     self._gemini_failures = 0
-                    return {"answer": text.strip(), "ai_provider": "gemini"}
+                    answer = text.strip()
+                    self._cache_set(question=question, tool=tool, context=context, answer=answer)
+                    return {"answer": answer, "ai_provider": "gemini"}
 
                 # Log once per attempt with status code to aid debugging.
                 logging.getLogger(__name__).warning("Gemini HTTP %s: %s", resp.status_code, resp.text)
                 if resp.status_code >= 500:
                     self._gemini_failures += 1
+                    # Fail fast on overload and open circuit sooner when we keep seeing 503s.
+                    if resp.status_code == 503:
+                        if self._gemini_failures >= self.gemini_circuit_threshold:
+                            self._gemini_circuit_until = time.time() + self.gemini_circuit_cooldown
+                            logging.getLogger(__name__).warning(
+                                "Gemini circuit open for %ss after %s failures",
+                                self.gemini_circuit_cooldown,
+                                self._gemini_failures,
+                            )
+                        return None
                 if attempt < self.gemini_max_retries:
                     time.sleep(self.gemini_retry_backoff * attempt)
 
@@ -242,6 +263,35 @@ class DashboardAssistant:
         """Use Gemini whenever a key is present, unless explicitly disabled or circuit-open."""
         return bool(self.gemini_enabled and self.gemini_api_key)
 
+    def _normalize_question(self, question: str) -> str:
+        return " ".join(question.lower().split())
+
+    def _cache_key(self, question: str, tool: Optional[str], context: Optional[Dict[str, Any]]) -> tuple:
+        context_line = self._context_line(context or {})
+        return (tool or "", context_line, self._normalize_question(question))
+
+    def _cache_get(self, question: str, tool: Optional[str], context: Optional[Dict[str, Any]]) -> Optional[Dict[str, str]]:
+        key = self._cache_key(question, tool, context)
+        entry = self._gemini_cache.get(key)
+        if not entry:
+            return None
+        answer, ts = entry
+        if (time.time() - ts) > self.gemini_cache_ttl:
+            self._gemini_cache.pop(key, None)
+            return None
+        return {"answer": answer, "ai_provider": "gemini-cache"}
+
+    def _cache_set(self, question: str, tool: Optional[str], context: Optional[Dict[str, Any]], answer: str) -> None:
+        if not answer:
+            return
+        key = self._cache_key(question, tool, context)
+        self._gemini_cache[key] = (answer, time.time())
+        if len(self._gemini_cache) > self.gemini_cache_max:
+            # Evict the oldest entry to cap memory.
+            oldest_key = min(self._gemini_cache.items(), key=lambda item: item[1][1])[0]
+            if oldest_key != key:
+                self._gemini_cache.pop(oldest_key, None)
+
     def _build_prompt(self, question: str, tool: Optional[str], guidance: Dict[str, Any], context: Dict[str, Any]) -> str:
         usage = "\n".join(f"- {item}" for item in guidance.get("usage", []))
         example = guidance.get("example", "")
@@ -267,12 +317,12 @@ class DashboardAssistant:
                 f"Suggested actions:\n{suggested}\n"
                 f"{context_block}\n\n"
                 f"User question: {question}\n"
-                "Respond concisely with 2-4 sentences."
+                "Respond with clear steps and explanation; expand with examples when helpful (up to ~6 sentences)."
             )
 
         return (
             f"{base_intro}\n\n"
             f"{context_block}\n"
             f"User question: {question}\n"
-            "Respond concisely with 2-4 sentences."
+            "Respond with clear steps and explanation; expand with examples when helpful (up to ~6 sentences)."
         )
