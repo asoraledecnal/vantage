@@ -154,9 +154,9 @@ document.addEventListener("DOMContentLoaded", () => {
             setTimeout(() => redirectToLogin("Ensuring redirect to login.html (fallback 1)"), 900);
             setTimeout(() => redirectToLogin("Ensuring redirect to login.html (fallback 2)"), 2500);
           } else {
-            // For account verification, return to profile if already logged in; otherwise go to login.
+            // User is now verified and signed in; send them to the dashboard.
+            const target = "dashboard.html";
             setTimeout(() => {
-              const target = "profile.html";
               window.location.href = target;
               setTimeout(() => window.location.replace(target), 200);
             }, 400);

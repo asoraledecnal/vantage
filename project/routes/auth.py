@@ -138,9 +138,12 @@ def verify_otp():
     user.otp_hash = None
     user.otp_expiry = None
     db.session.commit()
-    current_app.logger.info(f"Account successfully verified for user: {email}")
 
-    return jsonify({"message": "Account verified successfully! You can now log in."}), 200
+    # Auto-log the user in after verification to avoid a dead-end redirect loop.
+    session["user_id"] = str(user.id)
+    current_app.logger.info(f"Account successfully verified for user: {email}; session started.")
+
+    return jsonify({"message": "Account verified successfully! Redirecting to your dashboard."}), 200
 
 
 @auth_bp.route('/resend-otp', methods=['POST'])
