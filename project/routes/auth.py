@@ -140,6 +140,8 @@ def verify_otp():
     db.session.commit()
 
     # Auto-log the user in after verification to avoid a dead-end redirect loop.
+    session.pop("assistant_context", None)
+    session.pop("assistant_history", None)
     session["user_id"] = str(user.id)
     current_app.logger.info(f"Account successfully verified for user: {email}; session started.")
 
@@ -209,6 +211,9 @@ def login():
             "action": "verify"
         }), 200
 
+    # Clear any stale assistant context/history on new login.
+    session.pop("assistant_context", None)
+    session.pop("assistant_history", None)
     session["user_id"] = str(user.id)
     current_app.logger.info(f"User logged in successfully: {user.email}")
     return jsonify({"message": "Login successful!", "user_id": user.id}), 200

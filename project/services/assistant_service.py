@@ -71,7 +71,8 @@ class DashboardAssistant:
             return self._default_response()
 
         context = context or {}
-        selected_tool = self._resolve_tool(text, tool_hint) or context.get("tool")
+        resolved_tool = self._resolve_tool(text, tool_hint)
+        selected_tool = resolved_tool or (context.get("tool") if self._should_use_context(text) else None)
 
         # Prefer OpenAI if enabled; otherwise Gemini; otherwise deterministic guidance.
         if self._is_openai_active():
@@ -129,7 +130,23 @@ class DashboardAssistant:
                 best_score = score
                 best_tool = key
 
-        return best_tool if best_score > 0 else None
+        return best_tool if best_score >= 2 else None
+
+    def _should_use_context(self, text: str) -> bool:
+        """
+        Decide whether to rely on stored context. Avoid hijacking greetings/single-word chat.
+        """
+        lowered = (text or "").strip().lower()
+        if not lowered:
+            return False
+        greetings = {"hi", "hello", "hey", "yo", "sup"}
+        if lowered in greetings:
+            return False
+        # Treat short generic prompts without tool clues as non-contextual.
+        if len(lowered.split()) <= 2 and not any(word in lowered for word in ["what about", "why", "how"]):
+            return False
+        follow_cues = ["what about", "why", "how", "that", "this", "those", "them", "it", "more", "details", "previous", "earlier", "results"]
+        return any(cue in lowered for cue in follow_cues)
 
     def _build_tool_response(self, tool: str, text: str, context: Dict[str, Any]) -> Dict[str, Any]:
         guidance = self.tools[tool]
