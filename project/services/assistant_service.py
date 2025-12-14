@@ -134,7 +134,7 @@ class DashboardAssistant:
     def _build_tool_response(self, tool: str, text: str, context: Dict[str, Any]) -> Dict[str, Any]:
         guidance = self.tools[tool]
         context_line = self._context_line(context)
-        answer = f"{guidance['title']}: {guidance['description']} Try {guidance['example']}."
+        answer = f"{guidance['title']}: {guidance['description']} Example: {guidance['example']}."
         if context_line:
             answer = f"{context_line} — {answer}"
         return {
@@ -403,8 +403,9 @@ class DashboardAssistant:
             "You are a knowledgeable teacher and technical expert specializing in IT, computer systems, and networking. "
             "You are helping a user inside the Vantage dashboard, which offers WHOIS, DNS records, IP Geolocation, Port Scan, Speed Test, and a combined Domain Research tool. "
             "Explain the 'why' and 'how' behind technical topics, keep advice actionable, and offer practice questions when helpful. "
+            "When describing any tool, briefly state what the results reveal and why that matters for troubleshooting or validation. "
             "If the user seems finished, confused, or wants to share input, briefly invite them to use the landing page Feedback option so administrators can follow up (mention this sparingly). "
-            "Keep answers concise (ideally 2-3 sentences) and focused on the user's question. "
+            "Keep answers very concise (ideally 1-2 short sentences). "
             "If a question is unrelated to IT or networking, politely state your scope."
         )
 
@@ -418,12 +419,12 @@ class DashboardAssistant:
                 f"Suggested actions:\n{suggested}\n"
                 f"{context_block}\n\n"
                 f"User question: {question}\n"
-                "Respond succinctly with the key steps or answer in 2-3 sentences max."
+                "Respond in at most two short sentences. State the key steps or answer and note what the results help you detect/validate for network diagnostics. Only add a brief feedback mention if the user seems finished/confused or hints at suggestions."
             )
 
         return (
             f"{base_intro}\n\n"
             f"{context_block}\n"
             f"User question: {question}\n"
-            "Respond succinctly with the key steps or answer in 2-3 sentences max."
+            "Respond in at most two short sentences. State the key steps or answer and note what the results help you detect/validate for network diagnostics. Only add a brief feedback mention if the user seems finished/confused or hints at suggestions."
         )
