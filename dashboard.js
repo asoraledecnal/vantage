@@ -213,11 +213,51 @@ document.addEventListener("DOMContentLoaded", () => {
   const assistantInput = document.getElementById("assistant-input");
   const assistantMessages = document.getElementById("assistant-messages");
 
+  const escapeHtml = (str) =>
+    String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const formatAssistantText = (text) => {
+    const placeholders = [];
+    const makePlaceholder = (html) => {
+      const token = `__ASSIST_PLACEHOLDER_${placeholders.length}__`;
+      placeholders.push(html);
+      return token;
+    };
+
+    let safe = escapeHtml(text);
+
+    // Code blocks ``` ```
+    safe = safe.replace(/```([\s\S]*?)```/g, (_, code) =>
+      makePlaceholder(`<pre class="assistant-code-block"><code>${code.trim()}</code></pre>`)
+    );
+
+    // Inline code ` `
+    safe = safe.replace(/`([^`]+)`/g, (_, code) =>
+      makePlaceholder(`<code class="assistant-code-inline">${code}</code>`)
+    );
+
+    // Bold text ** **
+    safe = safe.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+
+    // Line breaks
+    safe = safe.replace(/\n/g, "<br>");
+
+    // Restore code placeholders
+    safe = safe.replace(/__ASSIST_PLACEHOLDER_(\d+)__/g, (_, idx) => placeholders[idx] || "");
+
+    return safe;
+  };
+
   const renderAssistantMessage = (role, text) => {
     if (!assistantMessages) return;
     const div = document.createElement("div");
     div.className = `assistant-message ${role}`;
-    div.textContent = text;
+    div.innerHTML = formatAssistantText(text);
     assistantMessages.appendChild(div);
     assistantMessages.scrollTop = assistantMessages.scrollHeight;
   };
