@@ -1108,6 +1108,46 @@ header .logo img {
   border-color: rgba(255, 216, 137, 0.7);
 }
 
+.assistant-tip {
+  position: fixed;
+  bottom: 100px;
+  right: 92px;
+  background: linear-gradient(135deg, rgba(255, 216, 137, 0.14), rgba(255, 157, 124, 0.18));
+  color: var(--text-strong);
+  border: 1px solid rgba(255, 216, 137, 0.35);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 0.93rem;
+  z-index: 2000;
+  backdrop-filter: blur(6px);
+  display: none;
+  animation: floaty 2.6s ease-in-out infinite;
+}
+
+.assistant-tip::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  right: 14px;
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(135deg, rgba(255, 216, 137, 0.14), rgba(255, 157, 124, 0.18));
+  border-left: 1px solid rgba(255, 216, 137, 0.35);
+  border-bottom: 1px solid rgba(255, 216, 137, 0.35);
+  transform: rotate(45deg);
+  box-shadow: 6px 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.assistant-tip.is-visible {
+  display: block;
+}
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
 .assistant-panel {
   position: fixed;
   bottom: 96px;

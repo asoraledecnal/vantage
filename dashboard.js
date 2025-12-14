@@ -212,6 +212,29 @@ document.addEventListener("DOMContentLoaded", () => {
   const assistantForm = document.getElementById("assistant-form");
   const assistantInput = document.getElementById("assistant-input");
   const assistantMessages = document.getElementById("assistant-messages");
+  const assistantTip = document.getElementById("assistant-tip");
+
+  const TIP_STORAGE_KEY = "vantage_assistant_tip_dismissed";
+  const dismissAssistantTip = () => {
+    if (assistantTip) {
+      assistantTip.classList.remove("is-visible");
+      try {
+        localStorage.setItem(TIP_STORAGE_KEY, "1");
+      } catch (e) {
+        console.warn("Unable to persist assistant tip dismissal:", e);
+      }
+    }
+  };
+
+  const maybeShowAssistantTip = () => {
+    if (!assistantTip) return;
+    try {
+      if (localStorage.getItem(TIP_STORAGE_KEY) === "1") return;
+    } catch (e) {
+      console.warn("Assistant tip storage read failed:", e);
+    }
+    setTimeout(() => assistantTip.classList.add("is-visible"), 1200);
+  };
 
   const escapeHtml = (str) =>
     String(str || "")
@@ -274,10 +297,14 @@ document.addEventListener("DOMContentLoaded", () => {
     assistantToggle.addEventListener("click", () => {
       const willOpen = !assistantPanel.classList.contains("is-open");
       toggleAssistant(willOpen);
+      dismissAssistantTip();
     });
   }
   if (assistantClose) {
-    assistantClose.addEventListener("click", () => toggleAssistant(false));
+    assistantClose.addEventListener("click", () => {
+      toggleAssistant(false);
+      dismissAssistantTip();
+    });
   }
 
   if (assistantForm && assistantInput) {
@@ -307,6 +334,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     renderAssistantMessage("bot", "Hi! Ask me about WHOIS, DNS, GeoIP, port scan, or speed tests.");
   }
+  maybeShowAssistantTip();
   // --- Generic Form Handler ---
   const handleFormSubmit = async (form, resultsContainer) => {
     const submitButton = form.querySelector('button[type="submit"]');
